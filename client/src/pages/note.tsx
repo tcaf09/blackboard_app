@@ -18,6 +18,7 @@ type Box = {
 };
 
 type Path = {
+  id: string;
   colour: string;
   points: [number, number, number][];
   size: number;
