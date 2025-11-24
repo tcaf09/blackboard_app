@@ -7,9 +7,13 @@ const router = express.Router();
 
 router.get("/", authenticateToken, async (req, res) => {
   try {
+    const user = await db
+      .collection("Users")
+      .findOne({ _id: new ObjectId(req.user._id) });
+    const folderIds = user.folders.map((folder) => new ObjectId(folder));
     const collection = db.collection("Folders");
     const folders = await collection
-      .find({ user: req.user.username })
+      .find({ _id: { $in: folderIds } })
       .toArray();
     if (!folders) {
       return res.status(404).send({ message: "This user has no folders" });
@@ -38,6 +42,12 @@ router.post("/", authenticateToken, async (req, res) => {
       user: req.user.username,
     };
     const results = await collection.insertOne(newFolder);
+    await db
+      .collection("Users")
+      .updateOne(
+        { _id: new ObjectId(req.user._id) },
+        { $push: { folders: results.insertedId } }
+      );
     res.status(200).send(results);
   } catch (err) {
     console.log(err);
@@ -79,8 +89,18 @@ router.delete("/:id", authenticateToken, async (req, res) => {
     return res.status(400).send({ message: "Invalid id" });
   }
   try {
-    await deleteFolder(id);
-    res.status(200).send({ message: "Folder deleted" });
+    const user = await db
+      .collection("Users")
+      .findOne({ _id: new ObjectId(req.user._id) });
+    const ownsFolder = user.folders.some((folder) =>
+      folder.equals(new ObjectId(id))
+    );
+    if (ownsFolder) {
+      await deleteFolder(id);
+      return res.status(200).send({ message: "Folder deleted" });
+    } else {
+      return res.status(404).send({ message: "You dont own this folder" });
+    }
   } catch (err) {
     console.log(err);
     res.status(500).send({ message: "Server error" });

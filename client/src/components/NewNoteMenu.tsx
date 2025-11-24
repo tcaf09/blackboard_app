@@ -1,12 +1,20 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState, type ChangeEvent } from "react";
 import { FaAngleUp, FaRegFolder } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
+import { FaXmark } from "react-icons/fa6";
+import axios from "axios";
 
 type Folder = {
   _id: string | null;
   name: string;
   parentId: string | null;
 };
+
+interface UserResults {
+  _id: string;
+  username: string;
+  email: string;
+}
 
 function NewNoteMenu({
   folders,
@@ -30,7 +38,16 @@ function NewNoteMenu({
   const [selectedFolder, setSelectedFolder] = useState<Folder | null>(
     parentFolder
   );
+
+  const [searchResults, setSearchResults] = useState<UserResults[]>([]);
+  const [searchFocused, setSearchFocused] = useState<boolean>(false);
+
   const nameRef = useRef<HTMLInputElement>(null);
+
+  const userRef = useRef<HTMLInputElement>(null);
+  const [searchedUser, setSearchedUser] = useState<string>("");
+  const [users, setUsers] = useState<{ username: string; _id: string }[]>([]);
+
   const navigate = useNavigate();
 
   const root: Folder = {
@@ -38,6 +55,33 @@ function NewNoteMenu({
     name: "Root",
     parentId: null,
   };
+
+  const handleUserChange = (e: ChangeEvent) => {
+    if (userRef.current) {
+      setSearchedUser((e.target as HTMLInputElement).value);
+    }
+  };
+
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      axios
+        .get(
+          `${import.meta.env.VITE_API_URL}/api/users/search?q=${searchedUser}`,
+          {
+            headers: {
+              Authorization: "Bearer " + authToken,
+              "Content-Type": "application/json",
+            },
+          }
+        )
+        .then((res) => {
+          setSearchResults(res.data);
+          console.log(searchResults);
+        });
+    }, 1000);
+
+    return () => clearTimeout(timeout);
+  }, [searchedUser]);
 
   async function addNote() {
     try {
@@ -50,6 +94,7 @@ function NewNoteMenu({
         body: JSON.stringify({
           name: nameRef.current ? nameRef.current.value : "",
           folderId: selectedFolder?._id,
+          userIds: users.map((user) => user._id),
         }),
       });
 
@@ -190,6 +235,67 @@ function NewNoteMenu({
           className="p-2 rounded-lg bg-stone-300 focus:outline-none text-black"
           ref={nameRef}
         />
+        <br />
+        <br />
+        <label htmlFor="users">Users: </label>
+        <br />
+        <div className="my-3">
+          {users.map((user, i) => {
+            return (
+              <div
+                key={i}
+                className="p-2 bg-stone-900 inline-block px-4 rounded-lg inset-shadow-sm inset-shadow-stone-700 shadow-sm shadow-stone-950 mx-1"
+              >
+                <span className="align-middle">{user.username}</span>
+                <span
+                  className="inline-block m-2 my-1 align-middle cursor-pointer"
+                  onClick={() => {
+                    setUsers((prev) => prev.filter((u) => u._id !== user._id));
+                  }}
+                >
+                  <FaXmark />
+                </span>
+              </div>
+            );
+          })}
+        </div>
+        <div className="relative">
+          <input
+            type="users"
+            id="name"
+            className="p-2 rounded-lg bg-stone-300 focus:outline-none text-black"
+            autoComplete="off"
+            ref={userRef}
+            value={searchedUser}
+            onChange={handleUserChange}
+            onBlur={() => {
+              setSearchFocused(false);
+            }}
+            onFocus={() => {
+              setSearchFocused(true);
+            }}
+          />
+          {searchResults[0] && searchFocused && (
+            <div className="bg-stone-950 p-2 rounded-lg absolute top-12 left-0 z-20">
+              {searchResults.map((res) => {
+                return (
+                  <div
+                    className="flex flex-col p-2 rounded-lg hover:bg-stone-900 cursor-pointer !transition-all !duration-300 !ease-in-out"
+                    onMouseDown={() =>
+                      setUsers((prev) => [
+                        ...prev,
+                        { username: res.username, _id: res._id },
+                      ])
+                    }
+                  >
+                    <span>{res.username}</span>
+                    <span className="text-xs text-stone-500">{res.email}</span>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
         <br />
         <br />
         {!parentFolder && (

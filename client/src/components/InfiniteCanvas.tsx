@@ -27,6 +27,7 @@ type Box = {
 };
 
 type Path = {
+  id: string;
   colour: string;
   points: [number, number, number][];
   size: number;
@@ -47,25 +48,6 @@ type Props = {
   isLoading: React.RefObject<boolean>;
   setSaved: React.Dispatch<React.SetStateAction<boolean>>;
 };
-
-// function isPathVisible(
-//   path: Path,
-//   boundingBox: { minX: number; minY: number; maxX: number; maxY: number }
-// ) {
-//   const padding = path.size * 2;
-//   for (const [x, y] of path.points) {
-//     if (
-//       x >= boundingBox.minX - padding &&
-//       x <= boundingBox.maxX + padding &&
-//       y >= boundingBox.minY - padding &&
-//       y <= boundingBox.maxY + padding
-//     ) {
-//       return true;
-//     }
-//   }
-
-//   return false;
-// }
 
 function InfiniteCanvas({
   selectedOption,
@@ -110,12 +92,15 @@ function InfiniteCanvas({
   const drawing = useRef<boolean>(false);
 
   const saving = useRef<boolean>(false);
+  const ws = useRef<WebSocket>(null);
+  const isRemoteChange = useRef<boolean>(false);
+
   const saveNote = useCallback(
     async (
-      pathsToSave: Path[],
-      boxesToSave: Box[],
-      boxesToDelete: Box[],
-      pathsToDelete: Path[]
+      pathsToSaveParam: Path[],
+      boxesToSaveParam: Box[],
+      boxesToDeleteParam: Box[],
+      pathsToDeleteParam: Path[]
     ) => {
       try {
         saving.current = true;
@@ -127,39 +112,38 @@ function InfiniteCanvas({
           });
         }
 
-        const res = await fetch(
-          `${import.meta.env.VITE_API_URL}/api/notes/${id}`,
-          {
-            method: "PATCH",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: "Bearer " + authToken,
-            },
-            body: JSON.stringify({
-              pathsToSave,
-              boxesToSave,
-              pathsToDelete,
-              boxesToDelete,
-              thumbnailUrl,
-            }),
-          }
-        );
+        if (ws.current) {
+          ws.current.send(
+            JSON.stringify({
+              type: "saveNote",
+              noteId: id,
+              data: {
+                pathsToSave: pathsToSaveParam,
+                boxesToSave: boxesToSaveParam,
+                pathsToDelete: pathsToDeleteParam,
+                boxesToDelete: boxesToDeleteParam,
+                thumbnailUrl,
+              },
+            })
+          );
+        }
 
-        if (!res.ok) throw new Error("Error saving note");
-        setPathsToSave((prev) => prev.filter((p) => !pathsToSave.includes(p)));
-        setBoxesToSave((prev) => prev.filter((b) => !boxesToSave.includes(b)));
+        setPathsToSave((prev) =>
+          prev.filter((p) => !pathsToSave.some((sent) => sent.id === p.id))
+        );
+        setBoxesToSave((prev) =>
+          prev.filter((b) => !boxesToSave.some((sent) => sent.id === b.id))
+        );
         setBoxesToDelete((prev) =>
-          prev.filter((b) => !boxesToSave.includes(b))
+          prev.filter((b) => !boxesToDelete.some((sent) => sent.id === b.id))
         );
         setPathsToDelete((prev) =>
-          prev.filter((p) => !pathsToDelete.includes(p))
+          prev.filter((p) => !pathsToDelete.some((sent) => sent.id === p.id))
         );
 
         setTimeout(() => setSaved(true), 0);
       } catch (err) {
         console.log(err);
-      } finally {
-        saving.current = false;
       }
     },
     [id, authToken, setSaved]
@@ -318,17 +302,18 @@ function InfiniteCanvas({
 
   const handlePointerUp = () => {
     const size = penSizes[colours.indexOf(colour)] * 2;
+    const pathId = crypto.randomUUID();
     setPaths((prev) => {
       const newPaths = [
         ...prev,
-        { colour: colour, points: points, size: size },
+        { id: pathId, colour: colour, points: points, size: size },
       ];
       return newPaths;
     });
     setPathsToSave((prev) => {
       const newPaths = [
         ...prev,
-        { colour: colour, points: points, size: size },
+        { id: pathId, colour: colour, points: points, size: size },
       ];
       return newPaths;
     });
@@ -426,17 +411,6 @@ function InfiniteCanvas({
     });
   }
 
-  // const visiblePaths = useMemo(() => {
-  //   const viewportBounds = {
-  //     minX: -pos.x / scale,
-  //     maxX: (-pos.x + window.innerWidth) / scale,
-  //     minY: -pos.y / scale,
-  //     maxY: (-pos.y + window.innerHeight) / scale,
-  //   };
-
-  //   return paths.filter((path) => isPathVisible(path, viewportBounds));
-  // }, [paths, pos.x, pos.y, scale]);
-
   const renderedPaths = useMemo(() => {
     return paths.map((e) => {
       const options = {
@@ -462,6 +436,69 @@ function InfiniteCanvas({
   }, [paths]);
 
   useEffect(() => {
+    ws.current = new WebSocket(
+      `${import.meta.env.VITE_WS_URL}?token=${authToken}`
+    );
+    ws.current.onopen = () => {
+      if (ws.current) {
+        ws.current.send(JSON.stringify({ type: "joinNote", noteId: id }));
+      }
+    };
+    ws.current.onmessage = (event) => {
+      const msg = JSON.parse(event.data);
+
+      if (msg.type === "error") {
+        throw new Error(msg.message);
+      } else if (msg.type === "noteSaved" && saving.current === true) {
+        saving.current = false;
+      } else if (msg.type === "noteUpdate") {
+        isRemoteChange.current = true;
+        console.log(msg.note);
+        setPaths((prev) => {
+          const combined = [...prev, ...msg.note.pathsToSave];
+          const filtered = combined.filter(
+            (p) => !msg.note.pathsToDelete.some((x: Path) => x.id === p.id)
+          );
+          return filtered;
+        });
+
+        let boxesToAdd = [];
+        let boxesToChange = [];
+        for (const box of msg.note.boxesToSave) {
+          const exists = textboxes.find((b) => box.id === b.id);
+          if (exists) {
+            boxesToChange.push(box);
+          } else {
+            boxesToAdd.push(box);
+          }
+        }
+
+        setTextboxes((prev) => {
+          let updated = [...prev];
+
+          for (const incoming of msg.note.boxesToSave) {
+            const existingIndex = updated.findIndex(
+              (box) => box.id === incoming.id
+            );
+            if (existingIndex === -1) {
+              updated.push(incoming);
+            } else {
+              updated[existingIndex] = incoming;
+            }
+          }
+
+          const idsToDelete = new Set(
+            msg.note.boxesToDelete.map((b: Box) => b.id)
+          );
+          updated = updated.filter((b) => !idsToDelete.has(b.id));
+
+          return updated;
+        });
+        setTimeout(() => {
+          isRemoteChange.current = false;
+        }, 0);
+      }
+    };
     function handleClickOutside(e: MouseEvent) {
       if (
         contextRef.current &&
@@ -473,11 +510,16 @@ function InfiniteCanvas({
     }
 
     document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      if (ws.current) {
+        ws.current.close();
+      }
+    };
   }, []);
 
   useEffect(() => {
-    if (isLoading.current || saving.current) {
+    if (isLoading.current || saving.current || isRemoteChange.current) {
       return;
     }
 

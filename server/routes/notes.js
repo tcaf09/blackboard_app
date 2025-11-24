@@ -8,33 +8,46 @@ const router = express.Router();
 
 router.get("/", authenticateToken, async (req, res) => {
   try {
+    const user = await db
+      .collection("Users")
+      .findOne({ _id: new ObjectId(req.user._id) });
+    const noteIds = user.notes.map((note) => new ObjectId(note));
     const collection = db.collection("Notes");
     const notes = await collection
-      .find({ user: req.user.username })
+      .find({ _id: { $in: noteIds } })
       .project({ paths: 0, texboxes: 0 })
       .toArray();
     res.status(200).send(notes);
   } catch (err) {
-    res.status(500).send("Server Error");
+    console.log(err);
+    res.status(500).send({ message: "Server Error" });
   }
 });
 
 router.get("/:id", authenticateToken, async (req, res) => {
-  const noteId = new ObjectId(req.params.id);
+  const noteId = req.params.id;
 
   if (!ObjectId.isValid(noteId)) {
     return res.status(400).send({ message: "Invalid note id" });
   }
   try {
     const collection = db.collection("Notes");
-    const note = await collection.findOne({
-      user: req.user.username,
-      _id: noteId,
-    });
-    if (!note) {
+    const user = await db
+      .collection("Users")
+      .findOne({ _id: new ObjectId(req.user._id) });
+    const ownsNote = user.notes.some((id) => id.equals(new ObjectId(noteId)));
+
+    if (ownsNote) {
+      const note = await collection.findOne({
+        _id: new ObjectId(noteId),
+      });
+      if (!note) {
+        return res.status(404).send({ message: "Note not found" });
+      }
+      res.status(200).send(note);
+    } else {
       return res.status(404).send({ message: "Note not found" });
     }
-    res.status(200).send(note);
   } catch (err) {
     console.log(err);
     res.status(500).send({ message: "Server Error" });
@@ -49,13 +62,22 @@ router.delete("/:id", authenticateToken, async (req, res) => {
   }
   try {
     const collection = db.collection("Notes");
-    const results = await collection.deleteOne({ _id: new ObjectId(noteId) });
+    const user = await db
+      .collection("Users")
+      .findOne({ _id: new ObjectId(req.user._id) });
+    const ownsNote = user.notes.some((id) => id.equals(new ObjectId(noteId)));
 
-    if (results.deletedCount === 0) {
-      return res.status(404).send({ message: "Note note found" });
+    if (ownsNote) {
+      const results = await collection.deleteOne({ _id: new ObjectId(noteId) });
+
+      if (results.deletedCount === 0) {
+        return res.status(404).send({ message: "Note note found" });
+      }
+
+      res.status(200).send({ message: "Note Deleted" });
+    } else {
+      return res.status(404).send({ message: "You dont own this note" });
     }
-
-    res.status(200).send({ message: "Note Deleted" });
   } catch (err) {
     console.log(err);
     res.status(500).send({ message: "Server Error" });
@@ -70,9 +92,18 @@ router.patch("/:id", authenticateToken, async (req, res) => {
   }
 
   try {
-    const query = { _id: new ObjectId(noteId), user: req.user.username };
+    const user = await db
+      .collection("Users")
+      .findOne({ _id: new ObjectId(req.user._id) });
+    const ownsNote = user.notes.some((id) => id.equals(new ObjectId(noteId)));
+
     const collection = db.collection("Notes");
-    const note = await collection.findOne(query);
+
+    let note = null;
+
+    if (ownsNote) {
+      note = await collection.findOne({ _id: new ObjectId(noteId) });
+    }
 
     if (!note) {
       return res.status(404).send({ message: "Note not found" });
@@ -94,7 +125,7 @@ router.patch("/:id", authenticateToken, async (req, res) => {
 
     for (const box of boxesToChange) {
       await collection.updateOne(
-        { ...query },
+        { _id: new ObjectId(noteId) },
         {
           $set: {
             "textboxes.$[elem]": box,
@@ -102,7 +133,7 @@ router.patch("/:id", authenticateToken, async (req, res) => {
         },
         {
           arrayFilters: [{ "elem.id": box.id }],
-        },
+        }
       );
     }
 
@@ -137,9 +168,12 @@ router.patch("/:id", authenticateToken, async (req, res) => {
       thumbnailUrl: imageUrl,
     };
 
-    const result = await collection.updateOne(query, updateOperation);
+    const result = await collection.updateOne(
+      { _id: new ObjectId(noteId) },
+      updateOperation
+    );
     if (pullOp.$pull) {
-      await collection.updateOne(query, pullOp);
+      await collection.updateOne({ _id: new ObjectId(noteId) }, pullOp);
     }
     res.status(200).send(result);
   } catch (err) {
@@ -150,7 +184,7 @@ router.patch("/:id", authenticateToken, async (req, res) => {
 
 router.post("/", authenticateToken, async (req, res) => {
   try {
-    const { name, folderId } = req.body;
+    const { name, folderId, userIds } = req.body;
 
     if (!name) {
       return res
@@ -169,13 +203,29 @@ router.post("/", authenticateToken, async (req, res) => {
     const collection = db.collection("Notes");
 
     const results = await collection.insertOne({
-      user: req.user.username,
       name: name,
       paths: [],
       textboxes: [],
       folderId: folderObjectId,
       thumbnailUrl: "",
     });
+
+    await db
+      .collection("Users")
+      .updateOne(
+        { _id: new ObjectId(req.user._id) },
+        { $push: { notes: results.insertedId } }
+      );
+
+    if (userIds) {
+      const objIds = userIds.map((userId) => new ObjectId(userId));
+      await db
+        .collection("Users")
+        .updateMany(
+          { _id: { $in: objIds } },
+          { $push: { notes: results.insertedId } }
+        );
+    }
 
     res.status(200).send(results);
   } catch (err) {

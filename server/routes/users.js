@@ -22,6 +22,7 @@ router.post("/register", async (req, res) => {
       username,
       hashedPassword,
       email,
+      notes: [],
     };
     const collection = db.collection("Users");
     const existingUser = await collection.findOne({
@@ -39,7 +40,10 @@ router.post("/register", async (req, res) => {
     const result = await collection.insertOne(newUser);
     let accessToken = "";
     if (result) {
-      const payload = { username: username };
+      const payload = {
+        _id: user._id,
+        username: user.username,
+      };
       accessToken = jwt.sign(payload, process.env.ACCESS_TOKEN_SECRET);
     }
     res.status(200).json({ accessToken });
@@ -68,7 +72,10 @@ router.post("/login", async (req, res) => {
     if (!passwordMatch) {
       res.status(401).send({ message: "Invalid Credentials" });
     }
-    const payload = { username: user.username };
+    const payload = {
+      _id: user._id,
+      username: user.username,
+    };
     const accessToken = jwt.sign(payload, process.env.ACCESS_TOKEN_SECRET);
     res.status(200).json({ accessToken });
   } catch (err) {
@@ -83,6 +90,31 @@ router.get("/", authenticateToken, async (req, res) => {
     const user = await collection.findOne({ username: req.user.username });
 
     res.status(200).send(user);
+  } catch (err) {
+    console.log(err);
+    res.status(500).send({ message: "Server error" });
+  }
+});
+
+router.get("/search", authenticateToken, async (req, res) => {
+  try {
+    const q = req.query.q;
+
+    if (!q) {
+      return res.status(200).send([]);
+    }
+
+    const results = await db
+      .collection("Users")
+      .find({
+        username: { $regex: q, $options: "i" },
+      })
+      .project({
+        hashedPassword: 0,
+      })
+      .toArray();
+
+    res.status(200).send(results);
   } catch (err) {
     console.log(err);
     res.status(500).send({ message: "Server error" });
