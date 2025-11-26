@@ -171,7 +171,7 @@ function NewNoteMenu({
         </button>
         <div
           className={`bg-stone-800 rounded-md text-stone-300 absolute top-full mt-2 w-52 ${
-            isOpen ? "max-h-0" : "max-h-45 border border-stone-600 "
+            !isOpen ? "max-h-0" : "max-h-45 border border-stone-600 "
           } transition-all! duration-300 ease-in-out overflow-y-auto`}
         >
           <div
