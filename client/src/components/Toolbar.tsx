@@ -31,7 +31,7 @@ function Toolbar({
   const [newColour, setNewColour] = useState<string>("#ffffff");
 
   return (
-    <div className=" absolute top-4 left-1/2 -translate-x-1/2 z-50 w-auto rounded-lg p-3 bg-stone-800 inset-shadow-sm inset-shadow-stone-700 flex shadow-sm shadow-stone-950">
+    <div className=" absolute top-4 left-1/2 -translate-x-1/2 z-30 min-h-15 border border-stone-500 w-auto rounded-lg p-3 bg-stone-700 flex ">
       <div
         className={`mx-2 ${
           selected === "mouse"
@@ -100,11 +100,11 @@ function Toolbar({
         <div
           className={`${
             selected === "add" ? "absolute" : "hidden"
-          } left-1/2 -translate-x-1/2 top-[150%] bg-stone-950 p-2 rounded-lg flex flex-col`}
+          } left-1/2 -translate-x-1/2 top-[150%] bg-stone-700 border border-stone-500 p-2 rounded-lg flex flex-col`}
         >
           <HexColorPicker color={newColour} onChange={setNewColour} />
           <button
-            className="p-2 border border-stone-300 hover:bg-stone-300/20 my-2 rounded-md"
+            className="p-2 border bg-stone-800 border-stone-600 hover:bg-stone-900 cusor-pointer my-2 rounded-md transition-all! ease-in-out duration-300"
             onClick={(e) => {
               e.stopPropagation();
               setColours((prev) => [...prev, newColour]);

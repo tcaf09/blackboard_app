@@ -28,10 +28,10 @@ function NewMiniMenu({
   return (
     <div
       ref={menuRef}
-      className="absolute top-full left-0 w-max bg-stone-950 inset-shadow-sm inset-shadow-stone-700 z-50 rounded-xl text-stone-300"
+      className="absolute top-full left-0 w-max bg-stone-700 border border-stone-500 z-50 rounded-lg text-stone-300"
     >
       <div
-        className="p-2 px-4 rounded-t-xl hover:bg-stone-900 !transition-all !duration-150 !ease-in-out"
+        className="p-2 px-4 rounded-t-lg hover:bg-stone-600 transition-all! duration-150 ease-in-out cursor-pointer"
         onClick={() => {
           setMenuType("Note");
           setNewNoteMenuShown(true);
@@ -41,7 +41,7 @@ function NewMiniMenu({
         <p>New Note</p>
       </div>
       <div
-        className="p-2 px-4 rounded-b-xl hover:bg-stone-800"
+        className="p-2 px-4 rounded-b-lg hover:bg-stone-600 transtion-all! duration-300 ease-in-out cursor-pointer"
         onClick={() => {
           setMenuType("Folder");
           setNewNoteMenuShown(true);

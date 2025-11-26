@@ -145,7 +145,7 @@ function Dashboard() {
         Welcome, {user && user.username}
       </h1>
       <div
-        className="absolute hover:scale-103 !transition-all !duration-150 !ease-in-out top-4 right-4 p-3 text-stone-300 text-2xl bg-stone-800 rounded-lg cursor-pointer z-50 inset-shadow-sm inset-shadow-stone-700 shadow-sm shadow-stone-950"
+        className="absolute text-xl hover:bg-stone-600 border border-stone-500 transition-all! duration-150 ease-in-out top-4 right-4 p-3 text-stone-300 bg-stone-700 rounded-lg cursor-pointer"
         onClick={() => {
           localStorage.setItem("token", "");
           navigate("/");
@@ -153,9 +153,9 @@ function Dashboard() {
       >
         <TbLogout />
       </div>
-      <div className="w-2/3 p-10 max-h-200 overflow-scroll [scrollbar-width:none] mx-auto rounded-3xl bg-stone-900 inset-shadow-sm inset-shadow-stone-700 relative shadow-sm shadow-stone-950">
+      <div className="w-2/3 px-10 max-h-200 mx-auto rounded-3xl bg-stone-900 border border-stone-700 relative ">
         <button
-          className="hover:scale-103 !transition-all !duration-150 !ease-in-out bg-stone-800 inset-shadow-sm inset-shadow-stone-700 shadow-sm shadow-stone-950 text-stone-300 p-3 rounded-md absolute right-4 top-4 cursor-pointer"
+          className="hover:bg-stone-600 border border-stone-500 transition-all! duration-150 ease-in-out bg-stone-700 text-stone-300 p-3 rounded-lg absolute right-4 top-4 cursor-pointer"
           onClick={() => {
             setParentFolder(null);
             setNewNoteMenuShown(true);
@@ -163,7 +163,7 @@ function Dashboard() {
         >
           <FaPlus />
         </button>
-        <div className="flex flex-wrap gap-5 items-start justify-start mt-10">
+        <div className="flex flex-wrap overflow-scroll [scrollbar-width:none] max-h-180 gap-5 items-start justify-start py-10">
           {notes.map((note, i) => {
             return (
               <NoteCard

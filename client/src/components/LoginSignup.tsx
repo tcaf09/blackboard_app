@@ -21,7 +21,7 @@ function LoginSignup() {
         <input
           type="text"
           id="username"
-          className="p-2 rounded-lg bg-stone-300 focus:outline-none"
+          className="p-2 rounded-lg bg-stone-800 border border-stone-600 focus:border-stone-300 transition-all! ease-in-out duration-300 text-stone-300 focus:outline-none"
           ref={userRef}
         />
       </div>
@@ -33,7 +33,7 @@ function LoginSignup() {
         <input
           type="password"
           id="password"
-          className="p-2 rounded-lg bg-stone-300 focus:outline-none"
+          className="p-2 rounded-lg bg-stone-800 border border-stone-600 focus:border-stone-300 transition-all! ease-in-out duration-300 text-stone-300 focus:outline-none"
           ref={passwordRef}
         />
       </div>
@@ -50,7 +50,7 @@ function LoginSignup() {
         <input
           type="text"
           id="username"
-          className="p-2 rounded-lg bg-stone-300 focus:outline-none"
+          className="p-2 rounded-lg bg-stone-800 border border-stone-600 focus:border-stone-300 transition-all! ease-in-out duration-300 text-stone-300 focus:outline-none"
           ref={userRef}
         />
       </div>
@@ -62,7 +62,7 @@ function LoginSignup() {
         <input
           type="password"
           id="password"
-          className="p-2 rounded-lg bg-stone-300 focus:outline-none"
+          className="p-2 rounded-lg bg-stone-800 border border-stone-600 focus:border-stone-300 transition-all! ease-in-out duration-300 text-stone-300 focus:outline-none"
           ref={passwordRef}
         />
       </div>
@@ -74,7 +74,7 @@ function LoginSignup() {
         <input
           type="password"
           id="confirmPassword"
-          className="p-2 rounded-lg bg-stone-300 focus:outline-none"
+          className="p-2 rounded-lg bg-stone-800 border border-stone-600 focus:border-stone-300 transition-all! ease-in-out duration-300 text-stone-300 focus:outline-none"
           ref={confPasswordRef}
         />
       </div>
@@ -86,7 +86,7 @@ function LoginSignup() {
         <input
           type="email"
           id="email"
-          className="p-2 rounded-lg bg-stone-300 focus:outline-none"
+          className="p-2 rounded-lg bg-stone-800 border border-stone-600 focus:border-stone-300 transition-all! ease-in-out duration-300 text-stone-300 focus:outline-none"
           ref={emailRef}
         />
       </div>
@@ -149,15 +149,15 @@ function LoginSignup() {
 
   return (
     <div className="flex items-center justify-center h-screen">
-      <div className="bg-gradient-to-b to-stone-900 from-stone-800 to-30% inset-shadow-sm inset-shadow-stone-700 shadow-sm shadow-stone-stone-950 w-auto h-2/3 rounded-[25px] flex flex-col items-center justify-between px-24 py-5">
-        <div className="flex h-12 rounded-full bg-stone-900 inset-shadow-sm inset-shadow-stone-950 justify-between w-full p-1 relative">
+      <div className="bg-stone-900 border border-stone-700 w-auto h-11/12 rounded-2xl flex flex-col items-center justify-between px-24 py-5">
+        <div className="flex h-12 rounded-full bg-stone-800 border border-stone-600 justify-between w-full p-1 relative">
           <div
             className={`absolute ${
               option === "login"
                 ? "translate-x-0 w-28"
-                : "translate-x-[calc(100%+1.4rem)] w-24"
-            } h-10 rounded-full bg-stone-800 text-stone-300 shadow-xs shadow-stone-950 inset-shadow-xs inset-shadow-stone-700 !transition-all !duration-150
-             !ease-in-out`}
+                : "translate-x-[calc(100%+1.0rem)] w-24"
+            } h-10 rounded-full bg-stone-700 border border-stone-500 text-stone-300 transition-all! duration-150
+             ease-in-out`}
           ></div>
           <p
             onClick={() => toggleOption("login")}
@@ -189,7 +189,7 @@ function LoginSignup() {
           {option === "login" ? loginForm : signupForm}
         </div>
         <button
-          className="text-stone-300 border-none bg-stone-800  hover:scale-103 inset-shadow-sm inset-shadow-stone-700 shadow-sm shadow-stone-950 w-3/4 rounded-full py-2 my-5 cursor-pointer !transition-all !duration-150 !ease-in-out"
+          className="text-stone-300 bg-stone-700  hover:bg-stone-600 border border-stone-600 w-3/4 rounded-full py-2 my-5 cursor-pointer transition-all! duration-300 ease-in-out"
           onClick={() => {
             if (option === "login" && userRef.current && passwordRef.current) {
               login(userRef.current.value, passwordRef.current.value);

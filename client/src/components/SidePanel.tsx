@@ -40,7 +40,7 @@ function NoteItem({
   const [noteHover, setNoteHover] = useState<boolean>(false);
   return (
     <div
-      className="flex gap-2 cursor-pointer my-1"
+      className="flex gap-2 cursor-pointer my-1 py-2"
       onClick={() => navigate(`/note/${note._id}`)}
       onMouseEnter={() => setNoteHover(true)}
       onMouseLeave={() => setNoteHover(false)}
@@ -231,13 +231,12 @@ function SidePanel({
   setParentFolder: (v: Folder | null) => void;
 }) {
   const [toggled, setToggled] = useState<boolean>(false);
-  const navigate = useNavigate();
 
   return (
     <div
-      className={`h-screen fixed overflow-scroll ${
-        toggled ? "left-0" : "-left-48"
-      } top-0 w-60 inset-shadow-sm inset-shadow-stone-700 bg-stone-900 rounded-r-3xl text-stone-300 shadow-sm shadow-stone-950`}
+      className={`h-screen w-80 fixed ${
+        toggled ? "left-0" : "-left-67"
+      } top-0 w-60 bg-stone-900 rounded-r-3xl text-stone-300 border border-stone-700 shadow-md shadow-stone-950`}
       style={{
         transition: "all 0.3s ease-in-out",
       }}
@@ -252,40 +251,40 @@ function SidePanel({
       </div>
       <div className={`mr-12 ml-3 text-lg ${!toggled ? "hidden" : ""}`}>
         <p className="text-stone-400 my-3">Notes</p>
-        {notes.map((note, i) => {
-          if (note.folderId === null) {
-            return (
-              <div
-                className="flex gap-2 cursor-pointer my-2"
-                onClick={() => navigate(`/note/${note._id}`)}
-              >
-                <FaRegStickyNote className="my-1 shrink-0" />
-                <p key={i} className="cursor-pointer truncate">
-                  {note.name}
-                </p>
-              </div>
-            );
-          }
-        })}
-        {folders.map((folder, i) => {
-          if (folder.parentId === null) {
-            return (
-              <Folder
-                folder={folder}
-                key={i}
-                notes={notes}
-                folders={folders}
-                setNewNoteMenuShown={setNewNoteMenuShown}
-                setParentFolder={setParentFolder}
-                setDeleteType={setDeleteType}
-                setToDelete={setToDelete}
-                setMenuType={setMenuType}
-                setDeleteMenuShown={setDeleteMenuShown}
-              />
-            );
-          }
-          return null;
-        })}
+        <div className="overflow-scroll max-h-[calc(100vh-var(--spacing)*25)]">
+          {notes.map((note, i) => {
+            if (note.folderId === null) {
+              return (
+                <NoteItem
+                  setDeleteType={setDeleteType}
+                  setToDelete={setToDelete}
+                  setDeleteMenuShown={setDeleteMenuShown}
+                  note={note}
+                  key={i}
+                />
+              );
+            }
+          })}
+          {folders.map((folder, i) => {
+            if (folder.parentId === null) {
+              return (
+                <Folder
+                  folder={folder}
+                  key={i}
+                  notes={notes}
+                  folders={folders}
+                  setNewNoteMenuShown={setNewNoteMenuShown}
+                  setParentFolder={setParentFolder}
+                  setDeleteType={setDeleteType}
+                  setToDelete={setToDelete}
+                  setMenuType={setMenuType}
+                  setDeleteMenuShown={setDeleteMenuShown}
+                />
+              );
+            }
+            return null;
+          })}
+        </div>
       </div>
     </div>
   );

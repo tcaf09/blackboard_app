@@ -141,7 +141,7 @@ function NewNoteMenu({
             paddingLeft: `${16 + depth * 20}px`,
           }}
           onClick={() => setSelectedFolder(folder)}
-          className="p-2 cursor-pointer rounded-md hover:bg-stone-200 flex flex-row"
+          className="p-2 cursor-pointer rounded-md hover:bg-stone-700 transition-all! ease-in-out duration-300 flex flex-row"
         >
           <FaRegFolder className="mt-1 mr-2" />
           {folder.name}
@@ -160,33 +160,33 @@ function NewNoteMenu({
       <div className="relative">
         <button
           onClick={() => setIsOpen(!isOpen)}
-          className="flex flex-row cursor-pointer bg-stone-300 text-black rounded-md p-2 w-40 justify-between"
+          className="flex flex-row cursor-pointer bg-stone-800 text-stone-300 border border-stone-600 rounded-md p-2 w-40 justify-between"
         >
           {selectedFolder?.name || "Select Folder..."}
           <FaAngleUp
             className={`${
               isOpen ? "rotate-180" : "rotate-0"
-            } !transition-all !duration-150 !ease-in-out my-1`}
+            } transition-all! duration-150 ease-in-out my-1`}
           />
         </button>
-        <div className="bg-stone-300 rounded-md text-black absolute top-full mt-2 w-52 max-h-40 overflow-y-auto">
-          {isOpen && (
-            <>
-              <div
-                style={{ paddingLeft: "16px" }}
-                onClick={() => setSelectedFolder(root)}
-                className="p-2 cursor-pointer rounded-md hover:bg-stone-200 flex flex-row"
-              >
-                <FaRegFolder className="mt-1 mr-2" />
-                <p>Root</p>
-              </div>
+        <div
+          className={`bg-stone-800 rounded-md text-stone-300 absolute top-full mt-2 w-52 ${
+            isOpen ? "max-h-0" : "max-h-45 border border-stone-600 "
+          } transition-all! duration-300 ease-in-out overflow-y-auto`}
+        >
+          <div
+            style={{ paddingLeft: "16px" }}
+            onClick={() => setSelectedFolder(root)}
+            className="p-2 cursor-pointer rounded-md hover:bg-stone-700 transition-all! duration-300 ease-in-out flex flex-row"
+          >
+            <FaRegFolder className="mt-1 mr-2" />
+            <p>Root</p>
+          </div>
 
-              {folders.map((folder) =>
-                folder.parentId === null ? (
-                  <FolderComponent folder={folder} key={folder._id} />
-                ) : null
-              )}
-            </>
+          {folders.map((folder) =>
+            folder.parentId === null ? (
+              <FolderComponent folder={folder} key={folder._id} />
+            ) : null
           )}
         </div>
       </div>
@@ -194,13 +194,13 @@ function NewNoteMenu({
   };
 
   return (
-    <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-gradient-to-b to-stone-900 from-stone-800 to-30% inset-shadow-xs inset-shadow-stone-700 shadow-sm shadow-stone-950 text-stone-300 z-50 p-10 rounded-2xl w-fit text-lg">
+    <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 p-10 rounded-2xl w-2/5 bg-stone-900 border border-stone-700 text-lg text-stone-300">
       {!parentFolder && (
-        <div className="flex h-12 rounded-full bg-stone-900 inset-shadow-sm inset-shadow-stone-950 shadow-xs shadow-stone-950 justify-between w-full p-1 relative">
+        <div className="flex h-12 rounded-full bg-stone-800 border border-stone-600 justify-between w-full p-1 relative">
           <div
             className={`absolute ${
               type === "Folder" ? "left-1" : "left-[calc(50%+0.125rem)]"
-            } h-10 rounded-full bg-stone-800 text-stone-300 shadow-xs shadow-stone-950 inset-shadow-xs inset-shadow-stone-700 !transition-all !duration-150 !ease-in-out`}
+            } h-10 rounded-full bg-stone-700  border border-stone-500 text-stone-300 transition-all! duration-300 ease-in-out`}
             style={{
               width: "calc(50% - 0.25rem)",
             }}
@@ -227,85 +227,84 @@ function NewNoteMenu({
       )}
       {parentFolder && <h2>{`Create New ${type}`}</h2>}
       <div className="my-2">
-        <label htmlFor="name">{`${type} name: `}</label>
-        <br />
-        <input
-          type="text"
-          id="name"
-          className="p-2 rounded-lg bg-stone-300 focus:outline-none text-black"
-          ref={nameRef}
-        />
-        <br />
-        <br />
-        <label htmlFor="users">Users: </label>
-        <br />
-        <div className="my-3">
-          {users.map((user, i) => {
-            return (
-              <div
-                key={i}
-                className="p-2 bg-stone-900 inline-block px-4 rounded-lg inset-shadow-sm inset-shadow-stone-700 shadow-sm shadow-stone-950 mx-1"
-              >
-                <span className="align-middle">{user.username}</span>
-                <span
-                  className="inline-block m-2 my-1 align-middle cursor-pointer"
-                  onClick={() => {
-                    setUsers((prev) => prev.filter((u) => u._id !== user._id));
-                  }}
-                >
-                  <FaXmark />
-                </span>
-              </div>
-            );
-          })}
-        </div>
-        <div className="relative">
+        <div className="flex flex-col">
+          <label htmlFor="name">{`${type} name: `}</label>
           <input
-            type="users"
+            type="text"
             id="name"
-            className="p-2 rounded-lg bg-stone-300 focus:outline-none text-black"
-            autoComplete="off"
-            ref={userRef}
-            value={searchedUser}
-            onChange={handleUserChange}
-            onBlur={() => {
-              setSearchFocused(false);
-            }}
-            onFocus={() => {
-              setSearchFocused(true);
-            }}
+            className="p-2 rounded-lg bg-stone-800 border border-stone-600 focus:border-stone-300 transition-all! ease-in-out duration-300 text-stone-300 focus:outline-none "
+            ref={nameRef}
           />
-          {searchResults[0] && searchFocused && (
-            <div className="bg-stone-950 p-2 rounded-lg absolute top-12 left-0 z-20">
-              {searchResults.map((res) => {
-                return (
-                  <div
-                    className="flex flex-col p-2 rounded-lg hover:bg-stone-900 cursor-pointer !transition-all !duration-300 !ease-in-out"
-                    onMouseDown={() =>
-                      setUsers((prev) => [
-                        ...prev,
-                        { username: res.username, _id: res._id },
-                      ])
-                    }
-                  >
-                    <span>{res.username}</span>
-                    <span className="text-xs text-stone-500">{res.email}</span>
-                  </div>
-                );
-              })}
-            </div>
-          )}
         </div>
-        <br />
-        <br />
+        <div className="my-5">
+          <label htmlFor="users">Users: </label>
+          <div>
+            {users.map((user, i) => {
+              return (
+                <div
+                  key={i}
+                  className="p-2 bg-stone-700 border border-stone-500 inline-block px-4 rounded-lg m-1 my-2"
+                >
+                  <span className="align-middle">{user.username}</span>
+                  <span
+                    className="inline-block m-2 my-1 align-middle cursor-pointer"
+                    onClick={() => {
+                      setUsers((prev) =>
+                        prev.filter((u) => u._id !== user._id)
+                      );
+                    }}
+                  >
+                    <FaXmark />
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+          <div className="relative">
+            <input
+              type="users"
+              id="name"
+              className="p-2 rounded-lg bg-stone-800 border border-stone-600 focus:border-stone-300 transition-all! ease-in-out duration-300 text-stone-300 focus:outline-none "
+              autoComplete="off"
+              ref={userRef}
+              value={searchedUser}
+              onChange={handleUserChange}
+              onBlur={() => {
+                setSearchFocused(false);
+              }}
+              onFocus={() => {
+                setSearchFocused(true);
+              }}
+            />
+            {searchResults[0] && searchFocused && (
+              <div className="bg-stone-950 p-2 rounded-lg absolute top-12 left-0 z-20">
+                {searchResults.map((res) => {
+                  return (
+                    <div
+                      className="flex flex-col p-2 rounded-lg hover:bg-stone-900 cursor-pointer transition-all! duration-300 ease-in-out"
+                      onMouseDown={() =>
+                        setUsers((prev) => [
+                          ...prev,
+                          { username: res.username, _id: res._id },
+                        ])
+                      }
+                    >
+                      <span>{res.username}</span>
+                      <span className="text-xs text-stone-500">
+                        {res.email}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </div>
         {!parentFolder && (
-          <>
+          <div className="my-5">
             <label htmlFor="folder">Parent Folder:</label>
-            <br />
             <Dropdown />
-            <br />
-            <br />
-          </>
+          </div>
         )}
         <button
           onClick={async () => {
@@ -320,7 +319,7 @@ function NewNoteMenu({
               setShown(false);
             }
           }}
-          className="bg-stone-800 rounded-full w-1/2 p-3 block mx-auto cursor-pointer inset-shadow-sm inset-shadow-stone-700 shadow-sm shadow-stone-950 !transition-all !duration-150 !ease-in-out hover:scale-103"
+          className="bg-stone-700 border border-stone-500 rounded-full w-1/2 p-3 block mx-auto cursor-pointer transition-all! duration-150 ease-in-out hover:bg-stone-600"
         >
           Create
         </button>

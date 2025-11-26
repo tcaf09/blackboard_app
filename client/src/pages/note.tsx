@@ -88,13 +88,13 @@ function Note() {
         setPenSizes={setPenSizes}
         setColours={setColours}
       />
-      <div
-        className="absolute hover:scale-103 !transition-all !duration-150 !ease-in-out top-4 left-4 p-4 text-stone-300 text-2xl bg-stone-800 rounded-lg cursor-pointer z-50 inset-shadow-xs inset-shadow-stone-700 shadow-sm shadow-stone-950"
+      <button
+        className="absolute transition-all! duration-150 ease-in-out top-4 left-4 min-h-15 p-4 text-stone-300 text-xl bg-stone-700 rounded-lg cursor-pointer z-30 border border-stone-500 hover:bg-stone-600"
         onClick={() => navigate("/dashboard")}
       >
         <FaHome />
-      </div>
-      <div className="absolute top-4 right-4 p-3 px-6 text-stone-300 text-lg bg-stone-800 inset-shadow-sm inset-shadow-stone-700 rounded-lg shadow-sm shadow-stone-950 flex z-50">
+      </button>
+      <div className="absolute top-4 right-4 min-h-15 p-3 text-stone-300 text-xl rounded-lg bg-stone-700 border border-stone-500 flex z-30">
         <div
           className={`text-3xl mr-2 ${
             saved ? "text-transparent" : "text-stone-300"

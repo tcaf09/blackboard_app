@@ -78,10 +78,10 @@ const Tiptap = ({
   return (
     <>
       <BubbleMenu editor={editor} options={{ placement: "bottom", offset: 8 }}>
-        <div className="bubble-menu flex p-3 bg-stone-900 rounded-full">
+        <div className="bubble-menu flex p-3 bg-stone-800 border border-stone-600 rounded-full">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <button className="px-2 py-1 text-xs rounded font-extrabold text-white hover:bg-white hover:text-black">
+              <button className="px-2 py-1 text-xs rounded-full cursor-pointer font-extrabold text-stone-300 hover:bg-stone-700 ">
                 Style
               </button>
             </DropdownMenuTrigger>
@@ -89,7 +89,7 @@ const Tiptap = ({
               <DropdownMenuGroup className="flex flex-col bg-stone-900 p-2 rounded-3xl">
                 <DropdownMenuItem asChild>
                   <button
-                    className="px-2 py-1 text-xs my-2 rounded text-white hover:bg-white hover:text-black"
+                    className="px-2 py-1 text-xs my-2 rounded-full text-stone-300 hover:bg-stone-700 "
                     onClick={() => editor.chain().focus().setParagraph().run()}
                   >
                     Normal
@@ -97,7 +97,7 @@ const Tiptap = ({
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
                   <button
-                    className="px-2 py-1 text-xs my-2 rounded text-white hover:bg-white hover:text-black"
+                    className="px-2 py-1 text-xs my-2 rounded-full text-stone-300 hover:bg-stone-700 "
                     onClick={() =>
                       editor.chain().focus().toggleHeading({ level: 1 }).run()
                     }
@@ -107,7 +107,7 @@ const Tiptap = ({
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
                   <button
-                    className="px-2 py-1 text-xs my-2 rounded text-white hover:bg-white hover:text-black"
+                    className="px-2 py-1 text-xs my-2 rounded-full text-stone-300 hover:bg-stone-700 "
                     onClick={() =>
                       editor.chain().focus().toggleHeading({ level: 2 }).run()
                     }
@@ -117,7 +117,7 @@ const Tiptap = ({
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
                   <button
-                    className="px-2 py-1 text-xs my-2 rounded text-white hover:bg-white hover:text-black"
+                    className="px-2 py-1 text-xs my-2 rounded-full text-stone-300 hover:bg-stone-700 "
                     onClick={() =>
                       editor.chain().focus().toggleHeading({ level: 3 }).run()
                     }
@@ -130,14 +130,14 @@ const Tiptap = ({
           </DropdownMenu>
           <button
             onClick={() => editor.chain().focus().toggleBold().run()}
-            className="px-2 py-1 text-xs rounded text-white hover:bg-white hover:text-black"
+            className="px-2 py-1 text-xs rounded-full text-stone-300 hover:bg-stone-700 "
             type="button"
           >
             <FaBold />
           </button>
           <button
             onClick={() => editor.chain().focus().toggleItalic().run()}
-            className="px-2 py-1 text-xs rounded text-white hover:bg-white hover:text-black"
+            className="px-2 py-1 text-xs rounded-full text-stone-300 hover:bg-stone-700 "
             type="button"
           >
             <FaItalic />
@@ -145,7 +145,7 @@ const Tiptap = ({
 
           <button
             onClick={() => editor.chain().focus().toggleUnderline().run()}
-            className="px-2 py-1 text-xs rounded text-white hover:bg-white hover:text-black"
+            className="px-2 py-1 text-xs rounded-full text-stone-300 hover:bg-stone-700 "
             type="button"
           >
             <FaUnderline />

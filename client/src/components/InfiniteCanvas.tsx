@@ -12,6 +12,11 @@ import { type JSONContent } from "@tiptap/react";
 import { v4 as uuid } from "uuid";
 import * as htmlToImage from "html-to-image";
 
+const MemoizedPath = React.memo(
+  ({ d, fill }: { d: string; fill: string }) => <path d={d} fill={fill} />,
+  (prev, next) => prev.d === next.d && prev.fill === next.fill
+);
+
 type Pos = {
   x: number;
   y: number;
@@ -94,6 +99,8 @@ function InfiniteCanvas({
   const saving = useRef<boolean>(false);
   const ws = useRef<WebSocket>(null);
   const isRemoteChange = useRef<boolean>(false);
+
+  const strokesCache = useRef<Map<string, string>>(new Map());
 
   const saveNote = useCallback(
     async (
@@ -412,26 +419,23 @@ function InfiniteCanvas({
   }
 
   const renderedPaths = useMemo(() => {
-    return paths.map((e) => {
-      const options = {
-        size: e.size,
-        smoothing: e.size / 32,
-        thinning: 0.11,
-        streamline: 0.01,
-        easing: (t: number) => t,
-        start: {
-          taper: 0,
-          cap: true,
-        },
-        end: {
-          taper: 0,
-          cap: true,
-        },
-      };
-      const stroke = getStroke(e.points, options);
-      const pathD = getSvgPathFromStroke(stroke);
-
-      return { pathD, colour: e.colour };
+    return paths.map((path) => {
+      if (!strokesCache.current.has(path.id)) {
+        const options = {
+          size: path.size,
+          smoothing: path.size / 32,
+          thinning: 0.11,
+          streamline: 0.01,
+          easing: (t: number) => t,
+          start: { taper: 0, cap: true },
+          end: { taper: 0, cap: true },
+        };
+        const stroke = getStroke(path.points, options);
+        const pathD = getSvgPathFromStroke(stroke);
+        strokesCache.current.set(path.id, pathD);
+      }
+      const pathD = strokesCache.current.get(path.id);
+      return { id: path.id, pathD: pathD || "", colour: path.colour };
     });
   }, [paths]);
 
@@ -550,8 +554,21 @@ function InfiniteCanvas({
     setSaved,
   ]);
 
-  const stroke = getStroke(points, options);
-  const pathData = getSvgPathFromStroke(stroke);
+  // ADD: New useEffect after renderedPaths
+  useEffect(() => {
+    const currentIds = new Set(paths.map((p) => p.id));
+    for (const cachedId of strokesCache.current.keys()) {
+      if (!currentIds.has(cachedId)) {
+        strokesCache.current.delete(cachedId);
+      }
+    }
+  }, [paths]);
+
+  const currentStroke = useMemo(() => {
+    if (points.length === 0) return "";
+    const stroke = getStroke(points, options);
+    return getSvgPathFromStroke(stroke);
+  }, [points, options.size, options.smoothing]);
 
   return (
     <div
@@ -657,10 +674,12 @@ function InfiniteCanvas({
             pointerEvents: selectedOption === "mouse" ? "none" : "auto",
           }}
         >
-          {drawing && <path d={pathData} fill={colour} />}
-          {renderedPaths.map((e, i) => {
-            return <path d={e.pathD} key={i} fill={e.colour} />;
-          })}
+          {drawing.current && currentStroke && (
+            <path d={currentStroke} fill={colour} />
+          )}
+          {renderedPaths.map((path) => (
+            <MemoizedPath key={path.id} d={path.pathD} fill={path.colour} />
+          ))}
         </svg>
       </div>
     </div>
