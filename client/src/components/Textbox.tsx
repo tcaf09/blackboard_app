@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import Tiptap from "./Tiptap";
 import { type JSONContent } from "@tiptap/react";
 
@@ -18,6 +18,8 @@ type TextboxProps = {
   handleContextMenu: (e: React.MouseEvent) => void;
   onChange: (id: string, content: JSONContent) => void;
   onResize: (id: string, update: Partial<Box>) => void;
+  boxSelected: boolean;
+  onClick: (e: React.MouseEvent) => void;
   panPos: { x: number; y: number };
 };
 
@@ -26,10 +28,11 @@ function Textbox({
   handleContextMenu,
   onChange,
   onResize,
+  boxSelected,
+  onClick,
   panPos,
 }: TextboxProps) {
   const [box, setBox] = useState<Box>(props);
-  const [selected, setSelected] = useState<boolean>(true);
 
   const isDraging = useRef(false);
   const offset = useRef<Position>([0, 0]);
@@ -146,24 +149,10 @@ function Textbox({
     });
   };
 
-  useEffect(() => {
-    const deselect = (e: MouseEvent) => {
-      if (boxRef.current && !boxRef.current.contains(e.target as Node)) {
-        setSelected(false);
-      }
-    };
-
-    document.addEventListener("mousedown", deselect);
-
-    return () => {
-      document.removeEventListener("mousedown", deselect);
-    };
-  });
-
   return (
     <div
       className={`absolute border-2 border-t-8 ${
-        selected ? "border-stone-700" : "border-transparent"
+        boxSelected ? "border-stone-700" : "border-transparent"
       } hover:border-stone-700`}
       style={{
         left: box.x,
@@ -173,7 +162,7 @@ function Textbox({
         height: "auto",
       }}
       onContextMenu={handleContextMenu}
-      onClick={() => setSelected(true)}
+      onClick={(e) => onClick(e)}
       ref={boxRef}
     >
       <div
@@ -209,7 +198,7 @@ function Textbox({
         className="absolute w-2 h-2 -bottom-1 -right-1 hover:cursor-nwse-resize"
         onPointerDown={(e) => startResize("bottomRight", e)}
       ></div>
-      <Tiptap selected={selected} onChange={onChange} box={box} />
+      <Tiptap selected={boxSelected} onChange={onChange} box={box} />
     </div>
   );
 }

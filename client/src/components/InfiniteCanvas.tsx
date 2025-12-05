@@ -99,8 +99,20 @@ function InfiniteCanvas({
   const saving = useRef<boolean>(false);
   const ws = useRef<WebSocket>(null);
   const isRemoteChange = useRef<boolean>(false);
+  const isDragging = useRef<boolean>(false);
 
   const strokesCache = useRef<Map<string, string>>(new Map());
+
+  const [selectionStart, setSelectionStart] = useState<{
+    x: number;
+    y: number;
+  } | null>(null);
+  const [selectionEnd, setSelectionEnd] = useState<{
+    x: number;
+    y: number;
+  } | null>(null);
+  const [selecting, setSelecting] = useState<boolean>(false);
+  const [selectedBoxes, setSelectedBoxes] = useState<string[]>([]);
 
   const saveNote = useCallback(
     async (
@@ -364,6 +376,20 @@ function InfiniteCanvas({
     setContextTargetIndex(index);
   };
 
+  const handleCanvasClick = (e: React.MouseEvent) => {
+    if (isDragging.current) {
+      isDragging.current = false;
+      return;
+    }
+
+    if (e.target === e.currentTarget) {
+      setSelectedBoxes([]);
+    }
+    if (selectedOption === "text") {
+      addTextbox(e);
+    }
+  };
+
   const deleteTextbox = () => {
     if (contextTargetIndex !== null) {
       setTextboxes((prev) => prev.filter((b) => b.id !== contextTargetIndex));
@@ -587,13 +613,44 @@ function InfiniteCanvas({
           touchAction: "none",
         }}
         onClick={(e) => {
-          if (selectedOption === "text") {
-            addTextbox(e);
-          }
+          handleCanvasClick(e);
         }}
         onPointerDown={(e) => {
           if (selectedOption === "pan") {
             startPan(e);
+          } else if (selectedOption === "mouse") {
+            resetGestures(e);
+            isDragging.current = false;
+            const y = (e.clientY - pos.y) / scale;
+            const x = (e.clientX - pos.x) / scale;
+            setSelecting(true);
+            setSelectionEnd({ x, y });
+            setSelectionStart({ x, y });
+          }
+        }}
+        onPointerMove={(e) => {
+          if (selectedOption === "mouse" && selecting && selectionStart) {
+            isDragging.current = true;
+            const y = (e.clientY - pos.y) / scale;
+            const x = (e.clientX - pos.x) / scale;
+            const hitBoxes = textboxes
+              .filter(
+                (box) =>
+                  box.x < Math.max(x, selectionStart?.x || 0) &&
+                  box.x > Math.min(x, selectionStart?.x || 0) &&
+                  box.y < Math.max(y, selectionStart?.y || 0) &&
+                  box.y > Math.min(y, selectionStart?.y || 0)
+              )
+              .map((box) => box.id);
+            setSelectedBoxes(hitBoxes);
+            setSelectionEnd({ x, y });
+          }
+        }}
+        onPointerUp={() => {
+          if (selectedOption === "mouse" && selecting) {
+            setSelectionStart(null);
+            setSelectionEnd(null);
+            setSelecting(false);
           }
         }}
       >
@@ -627,6 +684,11 @@ function InfiniteCanvas({
               });
             }}
             panPos={pos}
+            onClick={(e: React.MouseEvent) => {
+              e.stopPropagation();
+              setSelectedBoxes([box.id]);
+            }}
+            boxSelected={selectedBoxes.includes(box.id)}
           />
         ))}
         {contextPos && (
@@ -674,6 +736,20 @@ function InfiniteCanvas({
             pointerEvents: selectedOption === "mouse" ? "none" : "auto",
           }}
         >
+          {selecting &&
+            selectedOption === "mouse" &&
+            selectionStart &&
+            selectionEnd && (
+              <rect
+                x={Math.min(selectionStart.x, selectionEnd.x)}
+                y={Math.min(selectionStart.y, selectionEnd.y)}
+                width={Math.abs(selectionEnd.x - selectionStart.x)}
+                height={Math.abs(selectionEnd.y - selectionStart.y)}
+                fill="rgba(255, 255, 255, 0.3)"
+                stroke="rgba(255, 255, 255, 0.8)"
+                strokeWidth={2 / scale}
+              />
+            )}
           {drawing.current && currentStroke && (
             <path d={currentStroke} fill={colour} />
           )}
