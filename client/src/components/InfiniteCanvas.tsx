@@ -13,8 +13,16 @@ import { v4 as uuid } from "uuid";
 import * as htmlToImage from "html-to-image";
 
 const MemoizedPath = React.memo(
-  ({ d, fill }: { d: string; fill: string }) => <path d={d} fill={fill} />,
-  (prev, next) => prev.d === next.d && prev.fill === next.fill
+  ({ d, fill, selected }: { d: string; fill: string; selected: boolean; }) => (
+    <path
+      d={d}
+      fill={fill}
+      stroke={selected ? "#ffffff" : "none"}
+      strokeWidth={selected ? "4" : "0"}
+      strokeDasharray="6 4"
+    />
+  ),
+  (prev, next) => prev.d === next.d && prev.fill === next.fill && prev.selected === next.selected
 );
 
 type Pos = {
@@ -113,6 +121,7 @@ function InfiniteCanvas({
   } | null>(null);
   const [selecting, setSelecting] = useState<boolean>(false);
   const [selectedBoxes, setSelectedBoxes] = useState<string[]>([]);
+  const [selectedPaths, setSelectedPaths] = useState<string[]>([])
 
   const saveNote = useCallback(
     async (
@@ -384,6 +393,7 @@ function InfiniteCanvas({
 
     if (e.target === e.currentTarget) {
       setSelectedBoxes([]);
+      setSelectedPaths([])
     }
     if (selectedOption === "text") {
       addTextbox(e);
@@ -598,9 +608,8 @@ function InfiniteCanvas({
 
   return (
     <div
-      className={`${
-        selectedOption === "text" ? "cursor-text" : ""
-      } w-screen h-screen overflow-hidden`}
+      className={`${selectedOption === "text" ? "cursor-text" : ""
+        } w-screen h-screen overflow-hidden`}
       ref={screenRef}
     >
       <div
@@ -619,6 +628,7 @@ function InfiniteCanvas({
           if (selectedOption === "pan") {
             startPan(e);
           } else if (selectedOption === "mouse") {
+            if (e.target !== e.currentTarget) return;
             resetGestures(e);
             isDragging.current = false;
             const y = (e.clientY - pos.y) / scale;
@@ -642,6 +652,15 @@ function InfiniteCanvas({
                   box.y > Math.min(y, selectionStart?.y || 0)
               )
               .map((box) => box.id);
+            const hitPaths = paths.filter(path =>
+              path.points.some(point =>
+                point[0] < Math.max(x, selectionStart?.x || 0) &&
+                point[0] > Math.min(x, selectionStart?.x || 0) &&
+                point[1] < Math.max(y, selectionStart?.y || 0) &&
+                point[1] > Math.min(y, selectionStart?.y || 0)
+              )
+            ).map(path => path.id)
+            setSelectedPaths(hitPaths)
             setSelectedBoxes(hitBoxes);
             setSelectionEnd({ x, y });
           }
@@ -754,7 +773,7 @@ function InfiniteCanvas({
             <path d={currentStroke} fill={colour} />
           )}
           {renderedPaths.map((path) => (
-            <MemoizedPath key={path.id} d={path.pathD} fill={path.colour} />
+            <MemoizedPath key={path.id} d={path.pathD} fill={path.colour} selected={selectedPaths.includes(path.id)} />
           ))}
         </svg>
       </div>
