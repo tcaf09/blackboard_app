@@ -11,6 +11,7 @@ import { getStroke } from "perfect-freehand";
 import { type JSONContent } from "@tiptap/react";
 import { v4 as uuid } from "uuid";
 import * as htmlToImage from "html-to-image";
+import PalmRejecWin from "./PalmRejecWin";
 
 const MemoizedPath = React.memo(
   ({ d, fill, selected }: { d: string; fill: string; selected: boolean; }) => (
@@ -87,6 +88,7 @@ function InfiniteCanvas({
   const [contextTargetIndex, setContextTargetIndex] = useState<string | null>(
     null
   );
+  const [contextType, setContextType] = useState<string>("textbox")
 
   const isPanning = useRef<boolean>(false);
   const panOffset = useRef<Pos>({ x: 0, y: 0 });
@@ -122,6 +124,8 @@ function InfiniteCanvas({
   const [selecting, setSelecting] = useState<boolean>(false);
   const [selectedBoxes, setSelectedBoxes] = useState<string[]>([]);
   const [selectedPaths, setSelectedPaths] = useState<string[]>([])
+  const [palmRejec, setPalmRejec] = useState<null | { x: number, y: number, width: number, height: number }>(null)
+
 
   const saveNote = useCallback(
     async (
@@ -375,7 +379,7 @@ function InfiniteCanvas({
     setPathsToDelete((prev) => [...prev, ...deletedPaths]);
   }
 
-  const handleContextMenu = (e: React.MouseEvent, index: string) => {
+  const handleContextMenu = (e: React.MouseEvent, index: string | null) => {
     e.stopPropagation();
     e.preventDefault();
     setContextPos({
@@ -624,6 +628,10 @@ function InfiniteCanvas({
         onClick={(e) => {
           handleCanvasClick(e);
         }}
+        onContextMenu={(e) => {
+          handleContextMenu(e, null)
+          setContextType("canvas")
+        }}
         onPointerDown={(e) => {
           if (selectedOption === "pan") {
             startPan(e);
@@ -677,7 +685,10 @@ function InfiniteCanvas({
           <Textbox
             key={box.id}
             props={box}
-            handleContextMenu={(e) => handleContextMenu(e, box.id)}
+            handleContextMenu={(e) => {
+              handleContextMenu(e, box.id)
+              setContextType("textbox")
+            }}
             onChange={updateBoxContent}
             onResize={(id, updates) => {
               if (isLoading.current) return;
@@ -714,8 +725,14 @@ function InfiniteCanvas({
           <ContextMenu
             pos={contextPos}
             ref={contextRef}
+            type={contextType}
             onDelete={deleteTextbox}
+            palmRejec={palmRejec}
+            setPalmRejec={setPalmRejec}
           />
+        )}
+        {palmRejec && (
+          <PalmRejecWin win={palmRejec} setWin={setPalmRejec} selectedOption={selectedOption} panPos={pos} />
         )}
         <svg
           onPointerDown={(e) => {
@@ -726,7 +743,7 @@ function InfiniteCanvas({
             } else if (selectedOption === "pen" && e.pointerType === "mouse") {
               resetGestures(e);
               handlePointerDown(e);
-            } else if (e.pointerType === "touch") {
+            } else if (e.pointerType === "touch" && (selectedOption === "pen" || selectedOption === "eraser")) {
               resetGestures(e);
               setSelectedOption("pan");
               startPan(e);

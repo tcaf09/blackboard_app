@@ -1,43 +1,19 @@
-import { useRef, useState } from "react";
-import Tiptap from "./Tiptap";
-import { type JSONContent } from "@tiptap/react";
+import React, { useRef } from "react"
 
-type Position = [number, number];
-
-type Box = {
-  id: string;
-  x: number;
-  y: number;
-  width: number;
-  height: number | "auto";
-  content: JSONContent;
-};
-
-type TextboxProps = {
-  props: Box;
-  handleContextMenu: (e: React.MouseEvent) => void;
-  onChange: (id: string, content: JSONContent) => void;
-  onResize: (id: string, update: Partial<Box>) => void;
-  boxSelected: boolean;
-  onClick: (e: React.MouseEvent) => void;
-  panPos: { x: number; y: number };
-};
-
-function Textbox({
-  props,
-  handleContextMenu,
-  onChange,
-  onResize,
-  boxSelected,
-  onClick,
-  panPos,
-}: TextboxProps) {
-  const [box, setBox] = useState<Box>(props);
-
-  const isDraging = useRef(false);
-  const offset = useRef<Position>([0, 0]);
-  const boxRef = useRef<HTMLDivElement>(null);
-  const resizeHandle = useRef<null | string>(null);
+function PalmRejecWin({
+  win,
+  setWin,
+  selectedOption,
+  panPos
+}: {
+  win: { x: number, y: number, width: number, height: number };
+  setWin: React.Dispatch<React.SetStateAction<{ x: number, y: number, width: number, height: number } | null>>;
+  selectedOption: string;
+  panPos: { x: number, y: number }
+}) {
+  const isDraging = useRef(false)
+  const offset = useRef<[number, number]>([0, 0]);
+  const resizeHandle = useRef<null | string>(null)
 
   const startDrag = (e: React.PointerEvent) => {
     e.stopPropagation();
@@ -47,18 +23,18 @@ function Textbox({
 
     isDraging.current = true;
     offset.current = [
-      e.clientX - panPos.x - box.x,
-      e.clientY - panPos.y - box.y,
+      e.clientX - panPos.x - win.x,
+      e.clientY - panPos.y - win.y,
     ];
   };
 
   const drag = (e: PointerEvent) => {
     if (!isDraging.current) return;
-    setBox((prev) => ({
-      ...prev,
-      x: e.clientX - panPos.x - offset.current[0],
-      y: e.clientY - panPos.y - offset.current[1],
-    }));
+    setWin((prev) => {
+      if (!prev) return prev;
+
+      return { ...prev, x: e.clientX - panPos.x - offset.current[0], y: e.clientY - panPos.y - offset.current[1] }
+    })
   };
 
   const stopDrag = () => {
@@ -67,14 +43,6 @@ function Textbox({
     window.removeEventListener("pointermove", drag);
     window.removeEventListener("pointerup", stopDrag);
 
-    setBox((prev) => {
-      onResize(prev.id, {
-        x: prev.x,
-        y: prev.y,
-      });
-
-      return prev;
-    });
   };
 
   const startResize = (handle: string, e: React.PointerEvent) => {
@@ -89,21 +57,12 @@ function Textbox({
     resizeHandle.current = null;
     document.removeEventListener("pointermove", resize);
     document.removeEventListener("pointerup", stopResize);
-    setBox((prev) => {
-      onResize(prev.id, {
-        width: prev.width,
-        height: prev.height,
-        x: prev.x,
-        y: prev.y,
-      });
-
-      return prev;
-    });
   };
 
   const resize = (e: PointerEvent) => {
     if (!resizeHandle.current) return;
-    setBox((prev) => {
+    setWin((prev) => {
+      if (!prev) return prev
       let { x, y, width, height } = prev;
 
       switch (resizeHandle.current) {
@@ -148,21 +107,40 @@ function Textbox({
       return { ...prev, x, y, width, height };
     });
   };
-
   return (
     <div
-      className={`absolute border-2 border-t-8 ${boxSelected ? "border-stone-700" : "border-transparent"
-        } hover:border-stone-700`}
       style={{
-        left: box.x,
-        top: box.y,
-        minHeight: box.height,
-        width: box.width,
-        height: "auto",
+        position: "fixed",
+        left: win.x,
+        top: win.y,
+        width: win.width,
+        height: win.height,
       }}
-      onContextMenu={handleContextMenu}
-      onClick={(e) => onClick(e)}
-      ref={boxRef}
+      className="bg-stone-950/50 border border-stone-800 rounded-sm"
+      onClick={(e) => {
+        if (selectedOption !== "mouse") {
+          e.stopPropagation()
+          e.preventDefault()
+        }
+      }}
+      onMouseDown={(e) => {
+        if (selectedOption !== "mouse") {
+          e.stopPropagation()
+          e.preventDefault()
+        }
+      }}
+      onPointerDown={(e) => {
+        if (selectedOption !== "mouse") {
+          e.stopPropagation()
+          e.preventDefault()
+        }
+      }}
+      onContextMenu={(e) => {
+        if (selectedOption !== "mouse") {
+          e.stopPropagation()
+          e.preventDefault()
+        }
+      }}
     >
       <div
         className="absolute w-[80%] h-2 left-[10%] -top-2 hover:cursor-grab"
@@ -197,9 +175,8 @@ function Textbox({
         className="absolute w-2 h-2 -bottom-1 -right-1 hover:cursor-nwse-resize"
         onPointerDown={(e) => startResize("bottomRight", e)}
       ></div>
-      <Tiptap selected={boxSelected} onChange={onChange} box={box} />
     </div>
-  );
+  )
 }
 
-export default Textbox;
+export default PalmRejecWin
