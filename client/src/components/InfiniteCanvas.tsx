@@ -553,9 +553,23 @@ function InfiniteCanvas({
       }
     }
 
+    const handleKeydown = (e: KeyboardEvent) => {
+      const isCtrl = e.ctrlKey || e.metaKey;
+
+      if (isCtrl && (e.key === "+" || e.key === "=")) {
+        e.preventDefault()
+        setScale(prev => Math.min(Math.max(prev + 0.1, 0.3), 3))
+      } else if (isCtrl && e.key === "-") {
+        e.preventDefault()
+        setScale(prev => Math.min(Math.max(prev - 0.1, 0.3), 3))
+      }
+    }
+
     document.addEventListener("mousedown", handleClickOutside);
+    window.addEventListener("keydown", handleKeydown)
     return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("mousedown", handleClickOutside, { capture: true });
+      window.removeEventListener("keydown", handleKeydown)
       if (ws.current) {
         ws.current.close();
       }
@@ -724,6 +738,7 @@ function InfiniteCanvas({
         {contextPos && (
           <ContextMenu
             pos={contextPos}
+            setPos={setContextPos}
             ref={contextRef}
             type={contextType}
             onDelete={deleteTextbox}

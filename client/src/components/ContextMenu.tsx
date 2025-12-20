@@ -2,6 +2,7 @@ import React, { forwardRef } from "react";
 
 type ContextMenuProps = {
   pos: { x: number; y: number };
+  setPos: (v: { x: number, y: number } | null) => void;
   onDelete: () => void;
   type: string;
   palmRejec: { x: number, y: number, width: number, height: number } | null
@@ -9,7 +10,7 @@ type ContextMenuProps = {
 };
 
 const ContextMenu = forwardRef<HTMLDivElement, ContextMenuProps>(
-  ({ pos, onDelete, type, palmRejec, setPalmRejec }: ContextMenuProps, ref: React.Ref<HTMLDivElement>) => {
+  ({ pos, setPos, onDelete, type, palmRejec, setPalmRejec }: ContextMenuProps, ref: React.Ref<HTMLDivElement>) => {
     return (
       <div
         className="absolute flex flex-col bg-stone-700 border border-stone-500 text-stone-300 rounded-lg z-40"
@@ -33,6 +34,7 @@ const ContextMenu = forwardRef<HTMLDivElement, ContextMenuProps>(
               } else {
                 setPalmRejec(null)
               }
+              setPos(null)
             }}
           >
             Palm Rejection Window

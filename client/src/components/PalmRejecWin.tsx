@@ -66,6 +66,10 @@ function PalmRejecWin({
       let { x, y, width, height } = prev;
 
       switch (resizeHandle.current) {
+        case "top":
+          height = (height as number) + (y - (e.clientY - panPos.y));
+          y = e.clientY - panPos.y;
+          break
         case "bottom":
           height = e.clientY - panPos.y - y;
           break;
@@ -115,6 +119,7 @@ function PalmRejecWin({
         top: win.y,
         width: win.width,
         height: win.height,
+        cursor: selectedOption === "mouse" ? "grab" : "default"
       }}
       className="bg-stone-950/50 border border-stone-800 rounded-sm"
       onClick={(e) => {
@@ -133,6 +138,8 @@ function PalmRejecWin({
         if (selectedOption !== "mouse") {
           e.stopPropagation()
           e.preventDefault()
+        } else {
+          startDrag(e)
         }
       }}
       onContextMenu={(e) => {
@@ -143,8 +150,8 @@ function PalmRejecWin({
       }}
     >
       <div
-        className="absolute w-[80%] h-2 left-[10%] -top-2 hover:cursor-grab"
-        onPointerDown={startDrag}
+        className="absolute w-[80%] h-1 left-[10%] -top-0.5 hover:cursor-ns-resize"
+        onPointerDown={(e) => startResize("top", e)}
       ></div>
       <div
         className="absolute w-[80%] h-1 left-[10%] -bottom-0.5 hover:cursor-ns-resize"
