@@ -152,25 +152,22 @@ function LoginSignup() {
       <div className="bg-stone-900 border border-stone-700 w-auto h-11/12 rounded-2xl flex flex-col items-center justify-between px-24 py-5">
         <div className="flex h-12 rounded-full bg-stone-800 border border-stone-600 justify-between w-full p-1 relative">
           <div
-            className={`absolute ${
-              option === "login"
-                ? "translate-x-0 w-28"
-                : "translate-x-[calc(100%+1.0rem)] w-24"
-            } h-10 rounded-full bg-stone-700 border border-stone-500 text-stone-300 transition-all! duration-150
+            className={`absolute ${option === "login"
+              ? "translate-x-0 w-28"
+              : "translate-x-[calc(100%+1.0rem)] w-24"
+              } h-10 rounded-full bg-stone-700 border border-stone-500 text-stone-300 transition-all! duration-150
              ease-in-out`}
           ></div>
           <p
             onClick={() => toggleOption("login")}
-            className={`cursor-pointer rounded-full z-50 ${
-              option === "login" ? "text-stone-300" : "text-stone-500"
-            } px-10 py-2`}
+            className={`cursor-pointer rounded-full z-50 ${option === "login" ? "text-stone-300" : "text-stone-500"
+              } px-10 py-2`}
           >
             Login
           </p>
           <p
-            className={`cursor-pointer rounded-full px-5 py-2 z-50 ${
-              option === "signup" ? "text-stone-300" : "text-stone-500"
-            }`}
+            className={`cursor-pointer rounded-full px-5 py-2 z-50 ${option === "signup" ? "text-stone-300" : "text-stone-500"
+              }`}
             onClick={() => {
               toggleOption("signup");
             }}

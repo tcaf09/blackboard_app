@@ -97,6 +97,8 @@ function InfiniteCanvas({
     initialDistance?: number;
     initialScale?: number;
   }>({ pointers: {} });
+  const zoomFocus = useRef<Pos>({ x: 0, y: 0 });
+  const worldZoomFocus = useRef<Pos>({ x: 0, y: 0 });
 
   const [boxesToSave, setBoxesToSave] = useState<Box[]>([]);
   const [boxesToDelete, setBoxesToDelete] = useState<Box[]>([]);
@@ -210,6 +212,16 @@ function InfiniteCanvas({
       panOffset.current = { x: e.clientX - pos.x, y: e.clientY - pos.y };
     } else if (Object.keys(activePointers.current.pointers).length === 2) {
       const [p1, p2] = Object.values(activePointers.current.pointers);
+      const midpoint = {
+        x: (p1.clientX + p2.clientX) / 2,
+        y: (p1.clientY + p2.clientY) / 2,
+      };
+      const worldMidpoint = {
+        x: (midpoint.x - pos.x) / scale,
+        y: (midpoint.y - pos.y) / scale,
+      };
+      worldZoomFocus.current = worldMidpoint;
+      zoomFocus.current = midpoint;
       const initialDistance = Math.hypot(
         p2.clientX - p1.clientX,
         p2.clientY - p1.clientY
@@ -227,6 +239,7 @@ function InfiniteCanvas({
     if (!isPanning.current || drawing.current) return;
     activePointers.current.pointers[e.pointerId] = e;
     e.stopPropagation();
+
 
     if (Object.keys(activePointers.current.pointers).length === 1) {
       const newX = e.clientX - panOffset.current.x;
@@ -254,7 +267,7 @@ function InfiniteCanvas({
         currentDistance / (activePointers.current.initialDistance || 1);
       const dampingFactor = 0.6;
       const dampedScaleFactor = 1 + (scaleFactor - 1) * dampingFactor;
-      setScale(
+      const newScale =
         Math.min(
           Math.max(
             (activePointers.current.initialScale || 1) * dampedScaleFactor,
@@ -262,7 +275,24 @@ function InfiniteCanvas({
           ),
           3
         )
+      setScale(newScale);
+
+      const viewportWidth = window.innerWidth;
+      const viewportHeight = window.innerHeight;
+      const canvasWidth = 5000 * scale;
+      const canvasHeight = 5000 * scale;
+
+      const newX =
+        zoomFocus.current.x - worldZoomFocus.current.x * newScale;
+      const newY =
+        zoomFocus.current.y - worldZoomFocus.current.y * newScale;
+
+      const clampedX = Math.min(0, Math.max(newX, viewportWidth - canvasWidth));
+      const clampedY = Math.min(
+        0,
+        Math.max(newY, viewportHeight - canvasHeight)
       );
+      setPos({ x: clampedX, y: clampedY });
     }
   };
 
@@ -506,8 +536,8 @@ function InfiniteCanvas({
           return filtered;
         });
 
-        let boxesToAdd = [];
-        let boxesToChange = [];
+        const boxesToAdd = [];
+        const boxesToChange = [];
         for (const box of msg.note.boxesToSave) {
           const exists = textboxes.find((b) => box.id === b.id);
           if (exists) {
