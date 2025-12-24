@@ -762,7 +762,9 @@ function InfiniteCanvas({
               e.stopPropagation();
               setSelectedBoxes([box.id]);
             }}
-            boxSelected={selectedBoxes.includes(box.id)}
+            selectedBoxes={selectedBoxes}
+            allBoxes={textboxes}
+            setAllBoxes={setTextboxes}
           />
         ))}
         {contextPos && (

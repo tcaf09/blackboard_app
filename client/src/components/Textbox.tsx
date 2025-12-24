@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Tiptap from "./Tiptap";
 import { type JSONContent } from "@tiptap/react";
 
@@ -18,9 +18,11 @@ type TextboxProps = {
   handleContextMenu: (e: React.MouseEvent) => void;
   onChange: (id: string, content: JSONContent) => void;
   onResize: (id: string, update: Partial<Box>) => void;
-  boxSelected: boolean;
   onClick: (e: React.MouseEvent) => void;
   panPos: { x: number; y: number };
+  selectedBoxes: string[],
+  allBoxes: Box[]
+  setAllBoxes: React.Dispatch<React.SetStateAction<Box[]>>
 };
 
 function Textbox({
@@ -28,16 +30,23 @@ function Textbox({
   handleContextMenu,
   onChange,
   onResize,
-  boxSelected,
   onClick,
   panPos,
+  selectedBoxes,
+  allBoxes,
+  setAllBoxes
 }: TextboxProps) {
   const [box, setBox] = useState<Box>(props);
 
   const isDraging = useRef(false);
-  const offset = useRef<Position>([0, 0]);
+  const dragStart = useRef<Position>([0, 0])
+  const initialPositions = useRef<Map<string, Position>>(new Map())
   const boxRef = useRef<HTMLDivElement>(null);
   const resizeHandle = useRef<null | string>(null);
+
+  useEffect(() => {
+    setBox(props)
+  }, [props])
 
   const startDrag = (e: React.PointerEvent) => {
     e.stopPropagation();
@@ -45,20 +54,37 @@ function Textbox({
     window.addEventListener("pointermove", drag);
     window.addEventListener("pointerup", stopDrag);
 
+    initialPositions.current = new Map(
+      allBoxes
+        .filter(b => selectedBoxes.includes(b.id))
+        .map(b => [b.id, [b.x, b.y]])
+    )
+
     isDraging.current = true;
-    offset.current = [
-      e.clientX - panPos.x - box.x,
-      e.clientY - panPos.y - box.y,
+    dragStart.current = [
+      e.clientX - panPos.x,
+      e.clientY - panPos.y,
     ];
   };
 
   const drag = (e: PointerEvent) => {
     if (!isDraging.current) return;
-    setBox((prev) => ({
-      ...prev,
-      x: e.clientX - panPos.x - offset.current[0],
-      y: e.clientY - panPos.y - offset.current[1],
-    }));
+    const currentX = e.clientX - panPos.x
+    const currentY = e.clientY - panPos.y
+    const dx = currentX - dragStart.current[0]
+    const dy = currentY - dragStart.current[1]
+
+    setAllBoxes(prev => prev.map(b => {
+      if (!selectedBoxes.includes(b.id)) return b;
+
+      const initialPos = initialPositions.current.get(b.id)
+      if (!initialPos) return b
+      return {
+        ...b,
+        x: initialPos[0] + dx,
+        y: initialPos[1] + dy,
+      }
+    }))
   };
 
   const stopDrag = () => {
@@ -67,14 +93,14 @@ function Textbox({
     window.removeEventListener("pointermove", drag);
     window.removeEventListener("pointerup", stopDrag);
 
-    setBox((prev) => {
-      onResize(prev.id, {
-        x: prev.x,
-        y: prev.y,
-      });
-
-      return prev;
-    });
+    setAllBoxes(prev => {
+      prev.map(b => {
+        if (selectedBoxes.includes(b.id)) {
+          onResize(b.id, { x: b.x, y: b.y })
+        }
+      })
+      return prev
+    })
   };
 
   const startResize = (handle: string, e: React.PointerEvent) => {
@@ -151,7 +177,7 @@ function Textbox({
 
   return (
     <div
-      className={`absolute border-2 border-t-8 ${boxSelected ? "border-stone-700" : "border-transparent"
+      className={`absolute border-2 border-t-8 ${selectedBoxes.includes(box.id) ? "border-stone-700" : "border-transparent"
         } hover:border-stone-700`}
       style={{
         left: box.x,
@@ -197,7 +223,7 @@ function Textbox({
         className="absolute w-2 h-2 -bottom-1 -right-1 hover:cursor-nwse-resize"
         onPointerDown={(e) => startResize("bottomRight", e)}
       ></div>
-      <Tiptap selected={boxSelected} onChange={onChange} box={box} />
+      <Tiptap selected={selectedBoxes.includes(box.id)} onChange={onChange} box={box} />
     </div>
   );
 }
