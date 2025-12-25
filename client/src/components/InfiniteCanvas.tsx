@@ -106,6 +106,10 @@ function InfiniteCanvas({
   const [points, setPoints] = useState<[number, number, number][]>([]);
   const [pathsToSave, setPathsToSave] = useState<Path[]>([]);
   const [pathsToDelete, setPathsToDelete] = useState<Path[]>([]);
+  const initialPositions = useRef<Map<string, [number, number, number][]>>(new Map())
+  const strokeDragStart = useRef<Pos>({ x: 0, y: 0 })
+  const strokeDragging = useRef<boolean>(false)
+
   const drawing = useRef<boolean>(false);
 
   const saving = useRef<boolean>(false);
@@ -161,19 +165,6 @@ function InfiniteCanvas({
             })
           );
         }
-
-        setPathsToSave((prev) =>
-          prev.filter((p) => !pathsToSave.some((sent) => sent.id === p.id))
-        );
-        setBoxesToSave((prev) =>
-          prev.filter((b) => !boxesToSave.some((sent) => sent.id === b.id))
-        );
-        setBoxesToDelete((prev) =>
-          prev.filter((b) => !boxesToDelete.some((sent) => sent.id === b.id))
-        );
-        setPathsToDelete((prev) =>
-          prev.filter((p) => !pathsToDelete.some((sent) => sent.id === p.id))
-        );
 
         setTimeout(() => setSaved(true), 0);
       } catch (err) {
@@ -509,6 +500,77 @@ function InfiniteCanvas({
     });
   }, [paths]);
 
+  const handleStrokeDragStart = (e: React.PointerEvent) => {
+    if (strokeDragging.current) return
+    strokeDragging.current = true
+
+    initialPositions.current = new Map(
+      paths
+        .filter(p => selectedPaths.includes(p.id))
+        .map(p => [p.id, p.points])
+    )
+
+    strokeDragStart.current = {
+      x: (e.clientX - pos.x) / scale,
+      y: (e.clientY - pos.y) / scale,
+    }
+
+    window.addEventListener("pointermove", handleStrokeDrag)
+    window.addEventListener("pointerup", handleStrokeDragEnd)
+  }
+
+  const handleStrokeDrag = (e: PointerEvent) => {
+    if (!strokeDragging.current) return
+    const currentX = (e.clientX - pos.x) / scale
+    const currentY = (e.clientY - pos.y) / scale
+    const dx = currentX - strokeDragStart.current.x
+    const dy = currentY - strokeDragStart.current.y
+
+    setPaths(prev => prev.map(p => {
+      if (!selectedPaths.includes(p.id)) return p
+
+      const initialPos = initialPositions.current.get(p.id)
+      if (!initialPos) return p
+
+      strokesCache.current.delete(p.id)
+
+      return {
+        ...p,
+        points: initialPos.map(([x, y, pressure]) => [
+          x + dx,
+          y + dy,
+          pressure
+        ])
+      }
+
+    }))
+  }
+
+  const handleStrokeDragEnd = () => {
+    strokeDragging.current = false
+    window.removeEventListener("pointermove", handleStrokeDrag)
+    window.removeEventListener("pointerup", handleStrokeDragEnd)
+
+    setPaths(currentPaths => {
+      const movedPaths = currentPaths.filter(p => selectedPaths.includes(p.id))
+      setPathsToSave(prev => {
+        const map = new Map<string, Path>()
+
+        // keep previous
+        for (const p of prev) {
+          map.set(p.id, p)
+        }
+
+        // overwrite moved
+        for (const p of movedPaths) {
+          map.set(p.id, p)
+        }
+
+        return Array.from(map.values())
+      })
+      return currentPaths
+    })
+  }
   useEffect(() => {
     ws.current = new WebSocket(
       `${import.meta.env.VITE_WS_URL}?token=${authToken}`
@@ -525,27 +587,34 @@ function InfiniteCanvas({
         throw new Error(msg.message);
       } else if (msg.type === "noteSaved" && saving.current === true) {
         saving.current = false;
+
+        setPathsToSave([])
+        setPathsToDelete([])
+        setBoxesToSave([])
+        setBoxesToDelete([])
       } else if (msg.type === "noteUpdate") {
         isRemoteChange.current = true;
-        console.log(msg.note);
-        setPaths((prev) => {
-          const combined = [...prev, ...msg.note.pathsToSave];
-          const filtered = combined.filter(
-            (p) => !msg.note.pathsToDelete.some((x: Path) => x.id === p.id)
-          );
-          return filtered;
-        });
+        setPaths(prev => {
+          const map = new Map<string, Path>()
 
-        const boxesToAdd = [];
-        const boxesToChange = [];
-        for (const box of msg.note.boxesToSave) {
-          const exists = textboxes.find((b) => box.id === b.id);
-          if (exists) {
-            boxesToChange.push(box);
-          } else {
-            boxesToAdd.push(box);
+          // start with existing
+          for (const p of prev) {
+            map.set(p.id, p)
           }
-        }
+
+          // apply saves (overwrite)
+          for (const p of msg.note.pathsToSave) {
+            strokesCache.current.delete(p.id)
+            map.set(p.id, p)
+          }
+
+          // apply deletes
+          for (const p of msg.note.pathsToDelete) {
+            map.delete(p.id)
+          }
+
+          return Array.from(map.values())
+        })
 
         setTextboxes((prev) => {
           let updated = [...prev];
@@ -594,6 +663,7 @@ function InfiniteCanvas({
         setScale(prev => Math.min(Math.max(prev - 0.1, 0.3), 3))
       }
     }
+
 
     document.addEventListener("mousedown", handleClickOutside);
     window.addEventListener("keydown", handleKeydown)
@@ -679,7 +749,7 @@ function InfiniteCanvas({
         onPointerDown={(e) => {
           if (selectedOption === "pan") {
             startPan(e);
-          } else if (selectedOption === "mouse") {
+          } else if (selectedOption === "mouse" && selectedPaths.length === 0) {
             if (e.target !== e.currentTarget) return;
             resetGestures(e);
             isDragging.current = false;
@@ -688,6 +758,8 @@ function InfiniteCanvas({
             setSelecting(true);
             setSelectionEnd({ x, y });
             setSelectionStart({ x, y });
+          } else if (selectedOption === "mouse" && selectedPaths.length > 0) {
+            handleStrokeDragStart(e)
           }
         }}
         onPointerMove={(e) => {
@@ -765,6 +837,7 @@ function InfiniteCanvas({
             selectedBoxes={selectedBoxes}
             allBoxes={textboxes}
             setAllBoxes={setTextboxes}
+            scale={scale}
           />
         ))}
         {contextPos && (

@@ -23,6 +23,7 @@ type TextboxProps = {
   selectedBoxes: string[],
   allBoxes: Box[]
   setAllBoxes: React.Dispatch<React.SetStateAction<Box[]>>
+  scale: number
 };
 
 function Textbox({
@@ -34,7 +35,8 @@ function Textbox({
   panPos,
   selectedBoxes,
   allBoxes,
-  setAllBoxes
+  setAllBoxes,
+  scale
 }: TextboxProps) {
   const [box, setBox] = useState<Box>(props);
 
@@ -62,15 +64,15 @@ function Textbox({
 
     isDraging.current = true;
     dragStart.current = [
-      e.clientX - panPos.x,
-      e.clientY - panPos.y,
+      (e.clientX - panPos.x) / scale,
+      (e.clientY - panPos.y) / scale,
     ];
   };
 
   const drag = (e: PointerEvent) => {
     if (!isDraging.current) return;
-    const currentX = e.clientX - panPos.x
-    const currentY = e.clientY - panPos.y
+    const currentX = (e.clientX - panPos.x) / scale
+    const currentY = (e.clientY - panPos.y) / scale
     const dx = currentX - dragStart.current[0]
     const dy = currentY - dragStart.current[1]
 

@@ -108,73 +108,50 @@ router.patch("/:id", authenticateToken, async (req, res) => {
     if (!note) {
       return res.status(404).send({ message: "Note not found" });
     }
-
     const imageUrl = await uploadImage(req.body.thumbnailUrl, `note_${noteId}`);
 
-    const boxesToAdd = [];
-    const boxesToChange = [];
+    const pathMap = new Map()
 
-    for (const textbox of req.body.boxesToSave) {
-      const boxExists = note.textboxes.find((box) => box.id === textbox.id);
-      if (boxExists) {
-        boxesToChange.push(textbox);
-      } else {
-        boxesToAdd.push(textbox);
-      }
+    for (const p of note.paths || []) {
+      pathMap.set(p.id, p)
     }
 
-    for (const box of boxesToChange) {
-      await collection.updateOne(
-        { _id: new ObjectId(noteId) },
-        {
-          $set: {
-            "textboxes.$[elem]": box,
-          },
-        },
-        {
-          arrayFilters: [{ "elem.id": box.id }],
-        }
-      );
+    for (const p of req.body.pathsToSave || []) {
+      pathMap.set(p.id, p)
     }
 
-    const updateOperation = {};
-
-    if (req.body.pathsToSave && req.body.pathsToSave.length > 0) {
-      updateOperation.$push = updateOperation.$push || {};
-      updateOperation.$push.paths = { $each: req.body.pathsToSave };
+    for (const p of req.body.pathsToDelete || []) {
+      pathMap.delete(p.id)
     }
 
-    if (boxesToAdd.length > 0) {
-      updateOperation.$push = updateOperation.$push || {};
-      updateOperation.$push.textboxes = { $each: boxesToAdd };
+    const nextPaths = Array.from(pathMap.values())
+
+    const boxMap = new Map()
+
+    for (const b of note.textboxes || []) {
+      boxMap.set(b.id, b)
     }
 
-    const pullOp = {};
-    const boxIdsToDelete = req.body.boxesToDelete?.map((b) => b.id) || [];
-    if (
-      boxIdsToDelete.length > 0 ||
-      (req.body.pathsToDelete && req.body.pathsToDelete.length > 0)
-    ) {
-      pullOp.$pull = {};
-      if (boxIdsToDelete.length > 0) {
-        pullOp.$pull.textboxes = { id: { $in: boxIdsToDelete } };
-      }
-      if (req.body.pathsToDelete && req.body.pathsToDelete.length > 0) {
-        pullOp.$pull.paths = { $in: req.body.pathsToDelete };
-      }
+    for (const b of req.body.boxesToSave || []) {
+      boxMap.set(b.id, b)
     }
 
-    updateOperation.$set = {
-      thumbnailUrl: imageUrl,
-    };
+    for (const b of req.body.pathsToDelete || []) {
+      boxMap.delete(b.id)
+    }
+
+    const nextBoxes = Array.from(boxMap.values())
 
     const result = await collection.updateOne(
       { _id: new ObjectId(noteId) },
-      updateOperation
-    );
-    if (pullOp.$pull) {
-      await collection.updateOne({ _id: new ObjectId(noteId) }, pullOp);
-    }
+      {
+        $set: {
+          paths: nextPaths,
+          textboxes: nextBoxes,
+          thumbnailUrl: imageUrl,
+        }
+      })
+
     res.status(200).send(result);
   } catch (err) {
     console.log(err);
