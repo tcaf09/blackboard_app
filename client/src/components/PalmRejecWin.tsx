@@ -1,21 +1,29 @@
-import React, { useRef } from "react"
+import React, { useRef } from "react";
 
 function PalmRejecWin({
   win,
   setWin,
   selectedOption,
-  panPos
+  panPos,
 }: {
-  win: { x: number, y: number, width: number, height: number };
-  setWin: React.Dispatch<React.SetStateAction<{ x: number, y: number, width: number, height: number } | null>>;
+  win: { x: number; y: number; width: number; height: number };
+  setWin: React.Dispatch<
+    React.SetStateAction<{
+      x: number;
+      y: number;
+      width: number;
+      height: number;
+    } | null>
+  >;
   selectedOption: string;
-  panPos: { x: number, y: number }
+  panPos: { x: number; y: number };
 }) {
-  const isDraging = useRef(false)
+  const isDraging = useRef(false);
   const offset = useRef<[number, number]>([0, 0]);
-  const resizeHandle = useRef<null | string>(null)
+  const resizeHandle = useRef<null | string>(null);
 
   const startDrag = (e: React.PointerEvent) => {
+    if (selectedOption !== "mouse") return;
     e.stopPropagation();
 
     window.addEventListener("pointermove", drag);
@@ -33,8 +41,12 @@ function PalmRejecWin({
     setWin((prev) => {
       if (!prev) return prev;
 
-      return { ...prev, x: e.clientX - panPos.x - offset.current[0], y: e.clientY - panPos.y - offset.current[1] }
-    })
+      return {
+        ...prev,
+        x: e.clientX - panPos.x - offset.current[0],
+        y: e.clientY - panPos.y - offset.current[1],
+      };
+    });
   };
 
   const stopDrag = () => {
@@ -42,7 +54,6 @@ function PalmRejecWin({
 
     window.removeEventListener("pointermove", drag);
     window.removeEventListener("pointerup", stopDrag);
-
   };
 
   const startResize = (handle: string, e: React.PointerEvent) => {
@@ -62,14 +73,14 @@ function PalmRejecWin({
   const resize = (e: PointerEvent) => {
     if (!resizeHandle.current) return;
     setWin((prev) => {
-      if (!prev) return prev
+      if (!prev) return prev;
       let { x, y, width, height } = prev;
 
       switch (resizeHandle.current) {
         case "top":
           height = (height as number) + (y - (e.clientY - panPos.y));
           y = e.clientY - panPos.y;
-          break
+          break;
         case "bottom":
           height = e.clientY - panPos.y - y;
           break;
@@ -119,33 +130,33 @@ function PalmRejecWin({
         top: win.y,
         width: win.width,
         height: win.height,
-        cursor: selectedOption === "mouse" ? "grab" : "default"
+        cursor: selectedOption === "mouse" ? "grab" : "default",
       }}
-      className="bg-stone-950/50 border border-stone-800 rounded-sm"
+      className="bg-stone-950/50 border border-stone-800 rounded-sm z-50"
       onClick={(e) => {
         if (selectedOption !== "mouse") {
-          e.stopPropagation()
-          e.preventDefault()
+          e.stopPropagation();
+          e.preventDefault();
         }
       }}
       onMouseDown={(e) => {
         if (selectedOption !== "mouse") {
-          e.stopPropagation()
-          e.preventDefault()
+          e.stopPropagation();
+          e.preventDefault();
         }
       }}
       onPointerDown={(e) => {
         if (selectedOption !== "mouse") {
-          e.stopPropagation()
-          e.preventDefault()
+          e.stopPropagation();
+          e.preventDefault();
         } else {
-          startDrag(e)
+          startDrag(e);
         }
       }}
       onContextMenu={(e) => {
         if (selectedOption !== "mouse") {
-          e.stopPropagation()
-          e.preventDefault()
+          e.stopPropagation();
+          e.preventDefault();
         }
       }}
     >
@@ -183,7 +194,7 @@ function PalmRejecWin({
         onPointerDown={(e) => startResize("bottomRight", e)}
       ></div>
     </div>
-  )
+  );
 }
 
-export default PalmRejecWin
+export default PalmRejecWin;
