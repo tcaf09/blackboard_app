@@ -86,6 +86,9 @@ function InfiniteCanvas({
 
   const [pos, setPos] = useState<Pos>({ x: 0, y: 0 });
   const [scale, setScale] = useState<number>(1);
+  const longPressTimerRef = useRef<null | ReturnType<typeof setTimeout>>(null);
+  const longPressStartPos = useRef<null | Pos>(null);
+  const longPressFired = useRef<boolean>(false);
 
   const contextRef = useRef<HTMLDivElement>(null);
   const [contextPos, setContextPos] = useState<Pos | null>(null);
@@ -332,6 +335,41 @@ function InfiniteCanvas({
       taper: 0,
       cap: true,
     },
+  };
+
+  const longPressStart = (
+    e: React.PointerEvent,
+    type: string,
+    targetIndex?: string
+  ) => {
+    e.preventDefault();
+    setContextType(type);
+    if (targetIndex) {
+      setContextTargetIndex(targetIndex);
+    }
+    longPressFired.current = false;
+    longPressStartPos.current = {
+      x: e.clientX,
+      y: e.clientY,
+    };
+
+    longPressTimerRef.current = setTimeout(() => {
+      setContextPos({
+        x: (e.clientX - pos.x) / scale,
+        y: (e.clientY - pos.y) / scale,
+      });
+      longPressFired.current = true;
+    }, 500);
+  };
+
+  const clearLongPress = () => {
+    if (longPressTimerRef.current) {
+      clearTimeout(longPressTimerRef.current);
+      longPressTimerRef.current = null;
+      if (longPressFired.current === false) {
+        setContextPos(null);
+      }
+    }
   };
 
   function handlePointerDown(e: React.PointerEvent) {
@@ -747,6 +785,9 @@ function InfiniteCanvas({
           } else if (selectedOption === "mouse" && selectedPaths.length > 0) {
             handleStrokeDragStart(e);
           }
+          if (selectedOption === "mouse") {
+            longPressStart(e, "canvas");
+          }
         }}
         onPointerMove={(e) => {
           if (selectedOption === "mouse" && selecting && selectionStart) {
@@ -777,12 +818,22 @@ function InfiniteCanvas({
             setSelectedBoxes(hitBoxes);
             setSelectionEnd({ x, y });
           }
+          if (selectedOption === "mouse" && longPressStartPos.current) {
+            const dx = e.clientX - longPressStartPos.current.x;
+            const dy = e.clientY - longPressStartPos.current.y;
+            if (Math.hypot(dx, dy)) {
+              clearLongPress();
+            }
+          }
         }}
         onPointerUp={() => {
           if (selectedOption === "mouse" && selecting) {
             setSelectionStart(null);
             setSelectionEnd(null);
             setSelecting(false);
+          }
+          if (selectedOption === "mouse") {
+            clearLongPress();
           }
         }}
       >
