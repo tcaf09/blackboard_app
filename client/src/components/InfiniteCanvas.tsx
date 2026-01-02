@@ -143,46 +143,38 @@ function InfiniteCanvas({
     height: number;
   }>(null);
 
-  const saveNote = useCallback(
-    async (
-      pathsToSaveParam: Path[],
-      boxesToSaveParam: Box[],
-      boxesToDeleteParam: Box[],
-      pathsToDeleteParam: Path[]
-    ) => {
-      try {
-        saving.current = true;
-        let thumbnailUrl = "";
-        if (screenRef.current) {
-          thumbnailUrl = await htmlToImage.toJpeg(screenRef.current, {
-            quality: 0.5,
-            backgroundColor: "#0c0a09",
-          });
-        }
-
-        await axios.patch(
-          `${import.meta.env.VITE_API_URL}/api/notes/${id}`,
-          {
-            thumbnailUrl,
-            paths,
-            textboxes,
-          },
-          {
-            headers: {
-              Authorization: `Bearer ${authToken}`,
-            },
-          }
-        );
-
-        saving.current = false;
-        setTimeout(() => setSaved(true), 0);
-      } catch (err) {
-        console.log(err);
-        alert(err);
+  const saveNote = useCallback(async () => {
+    try {
+      saving.current = true;
+      let thumbnailUrl = "";
+      if (screenRef.current) {
+        thumbnailUrl = await htmlToImage.toJpeg(screenRef.current, {
+          quality: 0.5,
+          backgroundColor: "#0c0a09",
+        });
       }
-    },
-    [id, authToken, setSaved, paths, textboxes]
-  );
+
+      await axios.patch(
+        `${import.meta.env.VITE_API_URL}/api/notes/${id}`,
+        {
+          thumbnailUrl,
+          paths,
+          textboxes,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${authToken}`,
+          },
+        }
+      );
+
+      saving.current = false;
+      setTimeout(() => setSaved(true), 0);
+    } catch (err) {
+      console.log(err);
+      alert(err);
+    }
+  }, [id, authToken, setSaved, paths, textboxes]);
 
   function resetGestures(e?: React.PointerEvent) {
     drawing.current = false;
@@ -694,7 +686,7 @@ function InfiniteCanvas({
     setSaved(false);
     const timeout = setTimeout(() => {
       if (!saving.current) {
-        saveNote(pathsToSave, boxesToSave, boxesToDelete, pathsToDelete);
+        saveNote();
       }
     }, 2500);
 
