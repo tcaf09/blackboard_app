@@ -12,9 +12,10 @@ import { type JSONContent } from "@tiptap/react";
 import { v4 as uuid } from "uuid";
 import * as htmlToImage from "html-to-image";
 import PalmRejecWin from "./PalmRejecWin";
+import axios from "axios";
 
 const MemoizedPath = React.memo(
-  ({ d, fill, selected }: { d: string; fill: string; selected: boolean; }) => (
+  ({ d, fill, selected }: { d: string; fill: string; selected: boolean }) => (
     <path
       d={d}
       fill={fill}
@@ -23,7 +24,10 @@ const MemoizedPath = React.memo(
       strokeDasharray="6 4"
     />
   ),
-  (prev, next) => prev.d === next.d && prev.fill === next.fill && prev.selected === next.selected
+  (prev, next) =>
+    prev.d === next.d &&
+    prev.fill === next.fill &&
+    prev.selected === next.selected
 );
 
 type Pos = {
@@ -88,7 +92,7 @@ function InfiniteCanvas({
   const [contextTargetIndex, setContextTargetIndex] = useState<string | null>(
     null
   );
-  const [contextType, setContextType] = useState<string>("textbox")
+  const [contextType, setContextType] = useState<string>("textbox");
 
   const isPanning = useRef<boolean>(false);
   const panOffset = useRef<Pos>({ x: 0, y: 0 });
@@ -106,9 +110,11 @@ function InfiniteCanvas({
   const [points, setPoints] = useState<[number, number, number][]>([]);
   const [pathsToSave, setPathsToSave] = useState<Path[]>([]);
   const [pathsToDelete, setPathsToDelete] = useState<Path[]>([]);
-  const initialPositions = useRef<Map<string, [number, number, number][]>>(new Map())
-  const strokeDragStart = useRef<Pos>({ x: 0, y: 0 })
-  const strokeDragging = useRef<boolean>(false)
+  const initialPositions = useRef<Map<string, [number, number, number][]>>(
+    new Map()
+  );
+  const strokeDragStart = useRef<Pos>({ x: 0, y: 0 });
+  const strokeDragging = useRef<boolean>(false);
 
   const drawing = useRef<boolean>(false);
 
@@ -129,9 +135,13 @@ function InfiniteCanvas({
   } | null>(null);
   const [selecting, setSelecting] = useState<boolean>(false);
   const [selectedBoxes, setSelectedBoxes] = useState<string[]>([]);
-  const [selectedPaths, setSelectedPaths] = useState<string[]>([])
-  const [palmRejec, setPalmRejec] = useState<null | { x: number, y: number, width: number, height: number }>(null)
-
+  const [selectedPaths, setSelectedPaths] = useState<string[]>([]);
+  const [palmRejec, setPalmRejec] = useState<null | {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+  }>(null);
 
   const saveNote = useCallback(
     async (
@@ -150,28 +160,28 @@ function InfiniteCanvas({
           });
         }
 
-        if (ws.current) {
-          ws.current.send(
-            JSON.stringify({
-              type: "saveNote",
-              noteId: id,
-              data: {
-                pathsToSave: pathsToSaveParam,
-                boxesToSave: boxesToSaveParam,
-                pathsToDelete: pathsToDeleteParam,
-                boxesToDelete: boxesToDeleteParam,
-                thumbnailUrl,
-              },
-            })
-          );
-        }
+        await axios.patch(
+          `${import.meta.env.VITE_API_URL}/api/notes/${id}`,
+          {
+            thumbnailUrl,
+            paths,
+            textboxes,
+          },
+          {
+            headers: {
+              Authorization: `Bearer ${authToken}`,
+            },
+          }
+        );
 
+        saving.current = false;
         setTimeout(() => setSaved(true), 0);
       } catch (err) {
         console.log(err);
+        alert(err);
       }
     },
-    [id, authToken, setSaved]
+    [id, authToken, setSaved, paths, textboxes]
   );
 
   function resetGestures(e?: React.PointerEvent) {
@@ -231,7 +241,6 @@ function InfiniteCanvas({
     activePointers.current.pointers[e.pointerId] = e;
     e.stopPropagation();
 
-
     if (Object.keys(activePointers.current.pointers).length === 1) {
       const newX = e.clientX - panOffset.current.x;
       const newY = e.clientY - panOffset.current.y;
@@ -258,14 +267,13 @@ function InfiniteCanvas({
         currentDistance / (activePointers.current.initialDistance || 1);
       const dampingFactor = 0.6;
       const dampedScaleFactor = 1 + (scaleFactor - 1) * dampingFactor;
-      const newScale =
-        Math.min(
-          Math.max(
-            (activePointers.current.initialScale || 1) * dampedScaleFactor,
-            0.3
-          ),
-          3
-        )
+      const newScale = Math.min(
+        Math.max(
+          (activePointers.current.initialScale || 1) * dampedScaleFactor,
+          0.3
+        ),
+        3
+      );
       setScale(newScale);
 
       const viewportWidth = window.innerWidth;
@@ -273,10 +281,8 @@ function InfiniteCanvas({
       const canvasWidth = 5000 * scale;
       const canvasHeight = 5000 * scale;
 
-      const newX =
-        zoomFocus.current.x - worldZoomFocus.current.x * newScale;
-      const newY =
-        zoomFocus.current.y - worldZoomFocus.current.y * newScale;
+      const newX = zoomFocus.current.x - worldZoomFocus.current.x * newScale;
+      const newY = zoomFocus.current.y - worldZoomFocus.current.y * newScale;
 
       const clampedX = Math.min(0, Math.max(newX, viewportWidth - canvasWidth));
       const clampedY = Math.min(
@@ -337,7 +343,7 @@ function InfiniteCanvas({
   };
 
   function handlePointerDown(e: React.PointerEvent) {
-    if (e.buttons !== 1 || e.pointerType === "touch") return;
+    if (e.buttons !== 1) return;
     (e.target as Element).setPointerCapture(e.pointerId);
     setPoints([
       [(e.clientX - pos.x) / scale, (e.clientY - pos.y) / scale, e.pressure],
@@ -346,7 +352,7 @@ function InfiniteCanvas({
   }
 
   function handlePointerMove(e: React.PointerEvent) {
-    if (e.buttons !== 1 || e.pointerType === "touch") return;
+    if (e.buttons !== 1) return;
     setPoints((prev) => [
       ...prev,
       [(e.clientX - pos.x) / scale, (e.clientY - pos.y) / scale, e.pressure],
@@ -418,7 +424,7 @@ function InfiniteCanvas({
 
     if (e.target === e.currentTarget) {
       setSelectedBoxes([]);
-      setSelectedPaths([])
+      setSelectedPaths([]);
     }
     if (selectedOption === "text") {
       addTextbox(e);
@@ -501,76 +507,79 @@ function InfiniteCanvas({
   }, [paths]);
 
   const handleStrokeDragStart = (e: React.PointerEvent) => {
-    if (strokeDragging.current) return
-    strokeDragging.current = true
+    if (strokeDragging.current) return;
+    strokeDragging.current = true;
 
     initialPositions.current = new Map(
       paths
-        .filter(p => selectedPaths.includes(p.id))
-        .map(p => [p.id, p.points])
-    )
+        .filter((p) => selectedPaths.includes(p.id))
+        .map((p) => [p.id, p.points])
+    );
 
     strokeDragStart.current = {
       x: (e.clientX - pos.x) / scale,
       y: (e.clientY - pos.y) / scale,
-    }
+    };
 
-    window.addEventListener("pointermove", handleStrokeDrag)
-    window.addEventListener("pointerup", handleStrokeDragEnd)
-  }
+    window.addEventListener("pointermove", handleStrokeDrag);
+    window.addEventListener("pointerup", handleStrokeDragEnd);
+  };
 
   const handleStrokeDrag = (e: PointerEvent) => {
-    if (!strokeDragging.current) return
-    const currentX = (e.clientX - pos.x) / scale
-    const currentY = (e.clientY - pos.y) / scale
-    const dx = currentX - strokeDragStart.current.x
-    const dy = currentY - strokeDragStart.current.y
+    if (!strokeDragging.current) return;
+    const currentX = (e.clientX - pos.x) / scale;
+    const currentY = (e.clientY - pos.y) / scale;
+    const dx = currentX - strokeDragStart.current.x;
+    const dy = currentY - strokeDragStart.current.y;
 
-    setPaths(prev => prev.map(p => {
-      if (!selectedPaths.includes(p.id)) return p
+    setPaths((prev) =>
+      prev.map((p) => {
+        if (!selectedPaths.includes(p.id)) return p;
 
-      const initialPos = initialPositions.current.get(p.id)
-      if (!initialPos) return p
+        const initialPos = initialPositions.current.get(p.id);
+        if (!initialPos) return p;
 
-      strokesCache.current.delete(p.id)
+        strokesCache.current.delete(p.id);
 
-      return {
-        ...p,
-        points: initialPos.map(([x, y, pressure]) => [
-          x + dx,
-          y + dy,
-          pressure
-        ])
-      }
-
-    }))
-  }
+        return {
+          ...p,
+          points: initialPos.map(([x, y, pressure]) => [
+            x + dx,
+            y + dy,
+            pressure,
+          ]),
+        };
+      })
+    );
+  };
 
   const handleStrokeDragEnd = () => {
-    strokeDragging.current = false
-    window.removeEventListener("pointermove", handleStrokeDrag)
-    window.removeEventListener("pointerup", handleStrokeDragEnd)
+    strokeDragging.current = false;
+    window.removeEventListener("pointermove", handleStrokeDrag);
+    window.removeEventListener("pointerup", handleStrokeDragEnd);
 
-    setPaths(currentPaths => {
-      const movedPaths = currentPaths.filter(p => selectedPaths.includes(p.id))
-      setPathsToSave(prev => {
-        const map = new Map<string, Path>()
+    setPaths((currentPaths) => {
+      const movedPaths = currentPaths.filter((p) =>
+        selectedPaths.includes(p.id)
+      );
+      setPathsToSave((prev) => {
+        const map = new Map<string, Path>();
 
         // keep previous
         for (const p of prev) {
-          map.set(p.id, p)
+          map.set(p.id, p);
         }
 
         // overwrite moved
         for (const p of movedPaths) {
-          map.set(p.id, p)
+          map.set(p.id, p);
         }
 
-        return Array.from(map.values())
-      })
-      return currentPaths
-    })
-  }
+        return Array.from(map.values());
+      });
+      return currentPaths;
+    });
+  };
   useEffect(() => {
     ws.current = new WebSocket(
       `${import.meta.env.VITE_WS_URL}?token=${authToken}`
@@ -588,33 +597,33 @@ function InfiniteCanvas({
       } else if (msg.type === "noteSaved" && saving.current === true) {
         saving.current = false;
 
-        setPathsToSave([])
-        setPathsToDelete([])
-        setBoxesToSave([])
-        setBoxesToDelete([])
+        setPathsToSave([]);
+        setPathsToDelete([]);
+        setBoxesToSave([]);
+        setBoxesToDelete([]);
       } else if (msg.type === "noteUpdate") {
         isRemoteChange.current = true;
-        setPaths(prev => {
-          const map = new Map<string, Path>()
+        setPaths((prev) => {
+          const map = new Map<string, Path>();
 
           // start with existing
           for (const p of prev) {
-            map.set(p.id, p)
+            map.set(p.id, p);
           }
 
           // apply saves (overwrite)
           for (const p of msg.note.pathsToSave) {
-            strokesCache.current.delete(p.id)
-            map.set(p.id, p)
+            strokesCache.current.delete(p.id);
+            map.set(p.id, p);
           }
 
           // apply deletes
           for (const p of msg.note.pathsToDelete) {
-            map.delete(p.id)
+            map.delete(p.id);
           }
 
-          return Array.from(map.values())
-        })
+          return Array.from(map.values());
+        });
 
         setTextboxes((prev) => {
           let updated = [...prev];
@@ -656,20 +665,21 @@ function InfiniteCanvas({
       const isCtrl = e.ctrlKey || e.metaKey;
 
       if (isCtrl && (e.key === "+" || e.key === "=")) {
-        e.preventDefault()
-        setScale(prev => Math.min(Math.max(prev + 0.1, 0.3), 3))
+        e.preventDefault();
+        setScale((prev) => Math.min(Math.max(prev + 0.1, 0.3), 3));
       } else if (isCtrl && e.key === "-") {
-        e.preventDefault()
-        setScale(prev => Math.min(Math.max(prev - 0.1, 0.3), 3))
+        e.preventDefault();
+        setScale((prev) => Math.min(Math.max(prev - 0.1, 0.3), 3));
       }
-    }
-
+    };
 
     document.addEventListener("mousedown", handleClickOutside);
-    window.addEventListener("keydown", handleKeydown)
+    window.addEventListener("keydown", handleKeydown);
     return () => {
-      document.removeEventListener("mousedown", handleClickOutside, { capture: true });
-      window.removeEventListener("keydown", handleKeydown)
+      document.removeEventListener("mousedown", handleClickOutside, {
+        capture: true,
+      });
+      window.removeEventListener("keydown", handleKeydown);
       if (ws.current) {
         ws.current.close();
       }
@@ -681,15 +691,6 @@ function InfiniteCanvas({
       return;
     }
 
-    if (
-      pathsToSave.length === 0 &&
-      boxesToSave.length === 0 &&
-      boxesToDelete.length === 0 &&
-      pathsToDelete.length === 0
-    ) {
-      return;
-    }
-
     setSaved(false);
     const timeout = setTimeout(() => {
       if (!saving.current) {
@@ -698,15 +699,7 @@ function InfiniteCanvas({
     }, 2500);
 
     return () => clearTimeout(timeout);
-  }, [
-    boxesToSave,
-    pathsToSave,
-    boxesToDelete,
-    pathsToDelete,
-    saveNote,
-    isLoading,
-    setSaved,
-  ]);
+  }, [paths, textboxes, saveNote, isLoading, setSaved]);
 
   // ADD: New useEffect after renderedPaths
   useEffect(() => {
@@ -726,8 +719,9 @@ function InfiniteCanvas({
 
   return (
     <div
-      className={`${selectedOption === "text" ? "cursor-text" : ""
-        } w-screen h-screen overflow-hidden`}
+      className={`${
+        selectedOption === "text" ? "cursor-text" : ""
+      } w-screen h-screen overflow-hidden`}
       ref={screenRef}
     >
       <div
@@ -743,8 +737,8 @@ function InfiniteCanvas({
           handleCanvasClick(e);
         }}
         onContextMenu={(e) => {
-          handleContextMenu(e, null)
-          setContextType("canvas")
+          handleContextMenu(e, null);
+          setContextType("canvas");
         }}
         onPointerDown={(e) => {
           if (selectedOption === "pan") {
@@ -759,7 +753,7 @@ function InfiniteCanvas({
             setSelectionEnd({ x, y });
             setSelectionStart({ x, y });
           } else if (selectedOption === "mouse" && selectedPaths.length > 0) {
-            handleStrokeDragStart(e)
+            handleStrokeDragStart(e);
           }
         }}
         onPointerMove={(e) => {
@@ -776,15 +770,18 @@ function InfiniteCanvas({
                   box.y > Math.min(y, selectionStart?.y || 0)
               )
               .map((box) => box.id);
-            const hitPaths = paths.filter(path =>
-              path.points.some(point =>
-                point[0] < Math.max(x, selectionStart?.x || 0) &&
-                point[0] > Math.min(x, selectionStart?.x || 0) &&
-                point[1] < Math.max(y, selectionStart?.y || 0) &&
-                point[1] > Math.min(y, selectionStart?.y || 0)
+            const hitPaths = paths
+              .filter((path) =>
+                path.points.some(
+                  (point) =>
+                    point[0] < Math.max(x, selectionStart?.x || 0) &&
+                    point[0] > Math.min(x, selectionStart?.x || 0) &&
+                    point[1] < Math.max(y, selectionStart?.y || 0) &&
+                    point[1] > Math.min(y, selectionStart?.y || 0)
+                )
               )
-            ).map(path => path.id)
-            setSelectedPaths(hitPaths)
+              .map((path) => path.id);
+            setSelectedPaths(hitPaths);
             setSelectedBoxes(hitBoxes);
             setSelectionEnd({ x, y });
           }
@@ -802,8 +799,8 @@ function InfiniteCanvas({
             key={box.id}
             props={box}
             handleContextMenu={(e) => {
-              handleContextMenu(e, box.id)
-              setContextType("textbox")
+              handleContextMenu(e, box.id);
+              setContextType("textbox");
             }}
             onChange={updateBoxContent}
             onResize={(id, updates) => {
@@ -852,20 +849,20 @@ function InfiniteCanvas({
           />
         )}
         {palmRejec && (
-          <PalmRejecWin win={palmRejec} setWin={setPalmRejec} selectedOption={selectedOption} panPos={pos} />
+          <PalmRejecWin
+            win={palmRejec}
+            setWin={setPalmRejec}
+            selectedOption={selectedOption}
+            panPos={pos}
+          />
         )}
         <svg
           onPointerDown={(e) => {
-            if (e.pointerType === "pen" && selectedOption !== "eraser") {
-              resetGestures(e);
-              setSelectedOption("pen");
-              handlePointerDown(e);
-            } else if (selectedOption === "pen" && e.pointerType === "mouse") {
+            if (selectedOption === "pen") {
               resetGestures(e);
               handlePointerDown(e);
-            } else if (e.pointerType === "touch" && (selectedOption === "pen" || selectedOption === "eraser")) {
+            } else if (selectedOption === "pan") {
               resetGestures(e);
-              setSelectedOption("pan");
               startPan(e);
             }
           }}
@@ -910,7 +907,12 @@ function InfiniteCanvas({
             <path d={currentStroke} fill={colour} />
           )}
           {renderedPaths.map((path) => (
-            <MemoizedPath key={path.id} d={path.pathD} fill={path.colour} selected={selectedPaths.includes(path.id)} />
+            <MemoizedPath
+              key={path.id}
+              d={path.pathD}
+              fill={path.colour}
+              selected={selectedPaths.includes(path.id)}
+            />
           ))}
         </svg>
       </div>

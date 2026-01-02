@@ -110,49 +110,17 @@ router.patch("/:id", authenticateToken, async (req, res) => {
     }
     const imageUrl = await uploadImage(req.body.thumbnailUrl, `note_${noteId}`);
 
-    const pathMap = new Map()
-
-    for (const p of note.paths || []) {
-      pathMap.set(p.id, p)
-    }
-
-    for (const p of req.body.pathsToSave || []) {
-      pathMap.set(p.id, p)
-    }
-
-    for (const p of req.body.pathsToDelete || []) {
-      pathMap.delete(p.id)
-    }
-
-    const nextPaths = Array.from(pathMap.values())
-
-    const boxMap = new Map()
-
-    for (const b of note.textboxes || []) {
-      boxMap.set(b.id, b)
-    }
-
-    for (const b of req.body.boxesToSave || []) {
-      boxMap.set(b.id, b)
-    }
-
-    for (const b of req.body.pathsToDelete || []) {
-      boxMap.delete(b.id)
-    }
-
-    const nextBoxes = Array.from(boxMap.values())
-
     const result = await collection.updateOne(
       { _id: new ObjectId(noteId) },
       {
         $set: {
-          paths: nextPaths,
-          textboxes: nextBoxes,
           thumbnailUrl: imageUrl,
-        }
-      })
-
-    res.status(200).send(result);
+          paths: req.body.paths,
+          textboxes: req.body.textboxes,
+        },
+      }
+    );
+    res.status(200).send({ message: "Note saved" });
   } catch (err) {
     console.log(err);
     res.status(500).send({ message: "Server error" });
