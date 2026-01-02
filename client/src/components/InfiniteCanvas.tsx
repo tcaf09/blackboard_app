@@ -104,12 +104,12 @@ function InfiniteCanvas({
   const zoomFocus = useRef<Pos>({ x: 0, y: 0 });
   const worldZoomFocus = useRef<Pos>({ x: 0, y: 0 });
 
-  const [boxesToSave, setBoxesToSave] = useState<Box[]>([]);
-  const [boxesToDelete, setBoxesToDelete] = useState<Box[]>([]);
+  const [_boxesToSave, setBoxesToSave] = useState<Box[]>([]);
+  const [_boxesToDelete, setBoxesToDelete] = useState<Box[]>([]);
 
   const [points, setPoints] = useState<[number, number, number][]>([]);
-  const [pathsToSave, setPathsToSave] = useState<Path[]>([]);
-  const [pathsToDelete, setPathsToDelete] = useState<Path[]>([]);
+  const [_pathsToSave, setPathsToSave] = useState<Path[]>([]);
+  const [_pathsToDelete, setPathsToDelete] = useState<Path[]>([]);
   const initialPositions = useRef<Map<string, [number, number, number][]>>(
     new Map()
   );
