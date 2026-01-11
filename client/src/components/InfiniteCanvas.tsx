@@ -932,6 +932,61 @@ function InfiniteCanvas({
             pointerEvents: selectedOption === "mouse" ? "none" : "auto",
           }}
         >
+          <defs>
+            <pattern
+              id="dots"
+              width="20"
+              height="20"
+              patternUnits="userSpaceOnUse"
+            >
+              <circle
+                cx="10.5"
+                cy="10.5"
+                r="1"
+                fill="rgba(255, 255, 255, 50%)"
+              />
+            </pattern>
+            <pattern
+              id="mediumGrid"
+              width="40"
+              height="40"
+              patternUnits="userSpaceOnUse"
+            >
+              <path
+                d="M 40 0 L 0 0 0 40"
+                fill="none"
+                stroke="rgba(255, 255, 255, 50%)"
+                stroke-width="1"
+              />
+            </pattern>
+            <pattern
+              id="smallGrid"
+              height="20"
+              width="20"
+              patternUnits="userSpaceOnUse"
+            >
+              <path
+                d="M 20 0 L 0 0 0 20"
+                fill="none"
+                stroke="rgba(255, 255, 255, 50%)"
+                stroke-width="1"
+              />
+            </pattern>
+            <pattern
+              id="largeGrid"
+              width="60"
+              height="60"
+              patternUnits="userSpaceOnUse"
+            >
+              <path
+                d="M 60 0 L 0 0 0 60"
+                fill="none"
+                stroke="rgba(255, 255, 255, 50%)"
+                stroke-width="1"
+              />
+            </pattern>
+          </defs>
+          <rect width="100%" height="100%" fill="url(#dots)" />
           {selecting &&
             selectedOption === "mouse" &&
             selectionStart &&
