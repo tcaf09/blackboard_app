@@ -4,7 +4,6 @@ function PalmRejecWin({
   win,
   setWin,
   selectedOption,
-  panPos,
 }: {
   win: { x: number; y: number; width: number; height: number };
   setWin: React.Dispatch<
@@ -16,7 +15,6 @@ function PalmRejecWin({
     } | null>
   >;
   selectedOption: string;
-  panPos: { x: number; y: number };
 }) {
   const isDraging = useRef(false);
   const offset = useRef<[number, number]>([0, 0]);
@@ -24,16 +22,14 @@ function PalmRejecWin({
 
   const startDrag = (e: React.PointerEvent) => {
     if (selectedOption !== "mouse") return;
+    (e.target as Element).setPointerCapture(e.pointerId);
     e.stopPropagation();
 
     window.addEventListener("pointermove", drag);
     window.addEventListener("pointerup", stopDrag);
 
     isDraging.current = true;
-    offset.current = [
-      e.clientX - panPos.x - win.x,
-      e.clientY - panPos.y - win.y,
-    ];
+    offset.current = [e.clientX - win.x, e.clientY - win.y];
   };
 
   const drag = (e: PointerEvent) => {
@@ -43,8 +39,8 @@ function PalmRejecWin({
 
       return {
         ...prev,
-        x: e.clientX - panPos.x - offset.current[0],
-        y: e.clientY - panPos.y - offset.current[1],
+        x: e.clientX - offset.current[0],
+        y: e.clientY - offset.current[1],
       };
     });
   };
@@ -78,44 +74,44 @@ function PalmRejecWin({
 
       switch (resizeHandle.current) {
         case "top":
-          height = (height as number) + (y - (e.clientY - panPos.y));
-          y = e.clientY - panPos.y;
+          height = (height as number) + (y - e.clientY);
+          y = e.clientY;
           break;
         case "bottom":
-          height = e.clientY - panPos.y - y;
+          height = e.clientY - y;
           break;
 
         case "right":
-          width = e.clientX - panPos.x - x;
+          width = e.clientX - x;
           break;
 
         case "left":
-          width = width + (x - (e.clientX - panPos.x));
-          x = e.clientX - panPos.x;
+          width = width + (x - e.clientX);
+          x = e.clientX;
           break;
 
         case "bottomRight":
-          width = e.clientX - panPos.x - x;
-          height = e.clientY - panPos.y - y;
+          width = e.clientX - x;
+          height = e.clientY - y;
           break;
 
         case "bottomLeft":
-          width = width + (x - (e.clientX - panPos.x));
-          height = e.clientY - panPos.y - y;
-          x = e.clientX - panPos.x;
+          width = width + (x - e.clientX);
+          height = e.clientY - y;
+          x = e.clientX;
           break;
 
         case "topRight":
-          height = (height as number) + (y - (e.clientY - panPos.y));
-          width = e.clientX - panPos.x - x;
-          y = e.clientY - panPos.y;
+          height = (height as number) + (y - e.clientY);
+          width = e.clientX - x;
+          y = e.clientY;
           break;
 
         case "topLeft":
-          width = width + (x - (e.clientX - panPos.x));
-          height = (height as number) + (y - (e.clientY - panPos.y));
-          y = e.clientY - panPos.y;
-          x = e.clientX - panPos.x;
+          width = width + (x - e.clientX);
+          height = (height as number) + (y - e.clientY);
+          y = e.clientY;
+          x = e.clientX;
           break;
       }
 
@@ -131,6 +127,7 @@ function PalmRejecWin({
         width: win.width,
         height: win.height,
         cursor: selectedOption === "mouse" ? "grab" : "default",
+        touchAction: "none",
       }}
       className="bg-stone-950/50 border border-stone-800 rounded-sm z-50"
       onClick={(e) => {

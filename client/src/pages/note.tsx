@@ -1,6 +1,7 @@
 import { useState } from "react";
 import Toolbar from "../components/Toolbar";
 import InfiniteCanvas from "@/components/InfiniteCanvas";
+import PalmRejecWin from "@/components/PalmRejecWin";
 import { FaHome } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import { useEffect } from "react";
@@ -31,6 +32,14 @@ function Note() {
 
   const [paths, setPaths] = useState<Path[]>([]);
   const [textboxes, setTextboxes] = useState<Box[]>([]);
+  const [bgPattern, setBgPattern] = useState<string | null>(null);
+
+  const [palmRejec, setPalmRejec] = useState<{
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+  } | null>(null);
 
   const navigate = useNavigate();
 
@@ -66,6 +75,7 @@ function Note() {
         setPaths(data.paths);
         setTextboxes(data.textboxes);
         setNoteName(data.name);
+        setBgPattern(data.bgPattern);
       } catch (err) {
         console.log(err);
       } finally {
@@ -87,6 +97,8 @@ function Note() {
         penSizes={penSizes}
         setPenSizes={setPenSizes}
         setColours={setColours}
+        palmRejec={palmRejec}
+        setPalmRejec={setPalmRejec}
       />
       <button
         className="absolute transition-all! duration-150 ease-in-out top-4 left-4 min-h-15 p-4 text-stone-300 text-xl bg-stone-700 rounded-lg cursor-pointer z-30 border border-stone-500 hover:bg-stone-600"
@@ -104,6 +116,13 @@ function Note() {
         </div>
         <div className="mt-1">{noteName || "Loading..."}</div>
       </div>
+      {palmRejec && (
+        <PalmRejecWin
+          win={palmRejec}
+          setWin={setPalmRejec}
+          selectedOption={selectedOption}
+        />
+      )}
       <InfiniteCanvas
         selectedOption={selectedOption}
         setSelectedOption={setSelectedOption}
@@ -118,6 +137,9 @@ function Note() {
         authToken={authToken}
         isLoading={isLoading}
         setSaved={setSaved}
+        bgPattern={bgPattern}
+        palmRejec={palmRejec}
+        setPalmRejec={setPalmRejec}
       />
     </>
   );

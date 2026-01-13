@@ -11,7 +11,6 @@ import { getStroke } from "perfect-freehand";
 import { type JSONContent } from "@tiptap/react";
 import { v4 as uuid } from "uuid";
 import * as htmlToImage from "html-to-image";
-import PalmRejecWin from "./PalmRejecWin";
 import axios from "axios";
 
 const MemoizedPath = React.memo(
@@ -65,6 +64,16 @@ type Props = {
   authToken: string | null;
   isLoading: React.RefObject<boolean>;
   setSaved: React.Dispatch<React.SetStateAction<boolean>>;
+  bgPattern: string | null;
+  palmRejec: { x: number; y: number; height: number; width: number } | null;
+  setPalmRejec: React.Dispatch<
+    React.SetStateAction<{
+      x: number;
+      y: number;
+      width: number;
+      height: number;
+    } | null>
+  >;
 };
 
 function InfiniteCanvas({
@@ -81,6 +90,9 @@ function InfiniteCanvas({
   authToken,
   isLoading,
   setSaved,
+  bgPattern,
+  palmRejec,
+  setPalmRejec,
 }: Props) {
   const screenRef = useRef<HTMLDivElement>(null);
 
@@ -139,12 +151,6 @@ function InfiniteCanvas({
   const [selecting, setSelecting] = useState<boolean>(false);
   const [selectedBoxes, setSelectedBoxes] = useState<string[]>([]);
   const [selectedPaths, setSelectedPaths] = useState<string[]>([]);
-  const [palmRejec, setPalmRejec] = useState<null | {
-    x: number;
-    y: number;
-    width: number;
-    height: number;
-  }>(null);
 
   const saveNote = useCallback(async () => {
     try {
@@ -464,14 +470,6 @@ function InfiniteCanvas({
   const deleteTextbox = () => {
     if (contextTargetIndex !== null) {
       setTextboxes((prev) => prev.filter((b) => b.id !== contextTargetIndex));
-      setBoxesToDelete((prev) => {
-        const box = textboxes.find((b) => b.id === contextTargetIndex);
-        if (box) {
-          return [...prev, box];
-        } else {
-          return prev;
-        }
-      });
       setContextPos(null);
       setContextTargetIndex(null);
     }
@@ -891,14 +889,6 @@ function InfiniteCanvas({
             setPalmRejec={setPalmRejec}
           />
         )}
-        {palmRejec && (
-          <PalmRejecWin
-            win={palmRejec}
-            setWin={setPalmRejec}
-            selectedOption={selectedOption}
-            panPos={pos}
-          />
-        )}
         <svg
           onPointerDown={(e) => {
             if (selectedOption === "pen") {
@@ -986,7 +976,9 @@ function InfiniteCanvas({
               />
             </pattern>
           </defs>
-          <rect width="100%" height="100%" fill="url(#dots)" />
+          {bgPattern && (
+            <rect width="100%" height="100%" fill={`url(#${bgPattern})`} />
+          )}
           {selecting &&
             selectedOption === "mouse" &&
             selectionStart &&

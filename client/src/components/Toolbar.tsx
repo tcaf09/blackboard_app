@@ -8,6 +8,7 @@ import {
 import ColourOption from "./ColourOption";
 import { HexColorPicker } from "react-colorful";
 import { useState } from "react";
+import { BsThreeDots } from "react-icons/bs";
 
 function Toolbar({
   selected,
@@ -18,6 +19,8 @@ function Toolbar({
   penSizes,
   setPenSizes,
   setColours,
+  palmRejec,
+  setPalmRejec,
 }: {
   selected: string;
   setSelected: (v: string) => void;
@@ -27,6 +30,15 @@ function Toolbar({
   penSizes: number[];
   setPenSizes: React.Dispatch<React.SetStateAction<number[]>>;
   setColours: React.Dispatch<React.SetStateAction<string[]>>;
+  palmRejec: { x: number; y: number; width: number; height: number } | null;
+  setPalmRejec: React.Dispatch<
+    React.SetStateAction<{
+      x: number;
+      y: number;
+      width: number;
+      height: number;
+    } | null>
+  >;
 }) {
   const [newColour, setNewColour] = useState<string>("#ffffff");
 
@@ -115,6 +127,39 @@ function Toolbar({
           >
             Add Colour
           </button>
+        </div>
+      </div>
+      <div className="border mx-3 border-stone-300 h-8"></div>
+      <div
+        className={`mx-2 relative inline-block border p-2 text-stone-300 rounded-md ${
+          selected === "more"
+            ? "border-stone-300 bg-stone-300/20"
+            : "border-transparent"
+        }`}
+        onClick={() => setSelected("more")}
+      >
+        <BsThreeDots />
+        <div
+          className={`${
+            selected === "more" ? "absolute" : "hidden"
+          } bg-stone-700 border border-stone-500 rounded-lg p-3 top-12 w-60`}
+        >
+          <div
+            className={`border ${
+              palmRejec
+                ? "border-stone-300 bg-stone-300/20"
+                : "border-transparent"
+            } p-3 rounded-md`}
+            onClick={() => {
+              if (palmRejec) {
+                setPalmRejec(null);
+              } else {
+                setPalmRejec({ x: 200, y: 200, width: 200, height: 200 });
+              }
+            }}
+          >
+            Palm Rejection window
+          </div>
         </div>
       </div>
     </div>
