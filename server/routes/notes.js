@@ -152,6 +152,7 @@ router.post("/", authenticateToken, async (req, res) => {
       paths: [],
       textboxes: [],
       folderId: folderObjectId,
+      bgPattern: "dots",
       thumbnailUrl: "",
     });
 
