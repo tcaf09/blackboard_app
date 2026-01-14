@@ -31,8 +31,3 @@ div::-webkit-scrollbar {
   display: none;
 }
 
-* {
-  -webkit-touch-callout: none; /* disables iOS long-press menu */
-  -webkit-user-select: none;
-  user-select: none;
-}
