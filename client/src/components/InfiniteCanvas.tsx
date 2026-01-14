@@ -348,11 +348,6 @@ function InfiniteCanvas({
     type: string,
     targetIndex?: string
   ) => {
-    e.preventDefault();
-    setContextType(type);
-    if (targetIndex) {
-      setContextTargetIndex(targetIndex);
-    }
     longPressFired.current = false;
     longPressStartPos.current = {
       x: e.clientX,
@@ -364,6 +359,10 @@ function InfiniteCanvas({
         x: (e.clientX - pos.x) / scale,
         y: (e.clientY - pos.y) / scale,
       });
+      setContextType(type);
+      if (targetIndex) {
+        setContextTargetIndex(targetIndex);
+      }
       longPressFired.current = true;
     }, 500);
   };
@@ -747,9 +746,8 @@ function InfiniteCanvas({
 
   return (
     <div
-      className={`${
-        selectedOption === "text" ? "cursor-text" : ""
-      } w-screen h-screen overflow-hidden`}
+      className={`${selectedOption === "text" ? "cursor-text" : ""
+        } w-screen h-screen overflow-hidden`}
       ref={screenRef}
     >
       <div
@@ -783,7 +781,7 @@ function InfiniteCanvas({
           } else if (selectedOption === "mouse" && selectedPaths.length > 0) {
             handleStrokeDragStart(e);
           }
-          if (selectedOption === "mouse") {
+          if (selectedOption === "mouse" && e.pointerType === "touch") {
             longPressStart(e, "canvas");
           }
         }}
@@ -876,6 +874,9 @@ function InfiniteCanvas({
             allBoxes={textboxes}
             setAllBoxes={setTextboxes}
             scale={scale}
+            longPressStart={longPressStart}
+            longPressStartPos={longPressStartPos}
+            clearLongPress={clearLongPress}
           />
         ))}
         {contextPos && (

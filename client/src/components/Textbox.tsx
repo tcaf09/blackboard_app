@@ -24,6 +24,9 @@ type TextboxProps = {
   allBoxes: Box[]
   setAllBoxes: React.Dispatch<React.SetStateAction<Box[]>>
   scale: number
+  longPressStart: (e: React.PointerEvent, type: string, targetIndex?: string) => void
+  longPressStartPos: React.RefObject<{ x: number, y: number } | null>
+  clearLongPress: () => void
 };
 
 function Textbox({
@@ -36,7 +39,10 @@ function Textbox({
   selectedBoxes,
   allBoxes,
   setAllBoxes,
-  scale
+  scale,
+  longPressStart,
+  longPressStartPos,
+  clearLongPress
 }: TextboxProps) {
   const [box, setBox] = useState<Box>(props);
 
@@ -187,10 +193,26 @@ function Textbox({
         minHeight: box.height,
         width: box.width,
         height: "auto",
+        touchAction: "none"
       }}
       onContextMenu={handleContextMenu}
       onClick={(e) => onClick(e)}
       ref={boxRef}
+      onPointerDown={(e) => {
+        if (e.pointerType === "touch") {
+          longPressStart(e, "textbox", box.id)
+        }
+      }}
+      onPointerMove={(e) => {
+        if (longPressStartPos.current) {
+          const dx = e.clientX - longPressStartPos.current.x;
+          const dy = e.clientY - longPressStartPos.current.y;
+          if (Math.hypot(dx, dy)) {
+            clearLongPress();
+          }
+        }
+      }}
+      onPointerUp={() => clearLongPress()}
     >
       <div
         className="absolute w-[80%] h-2 left-[10%] -top-2 hover:cursor-grab"
