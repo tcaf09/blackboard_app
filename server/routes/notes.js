@@ -117,6 +117,7 @@ router.patch("/:id", authenticateToken, async (req, res) => {
           thumbnailUrl: imageUrl,
           paths: req.body.paths,
           textboxes: req.body.textboxes,
+          bgPattern: req.body.bgPattern
         },
       }
     );
