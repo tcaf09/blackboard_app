@@ -97,8 +97,8 @@ function Note() {
         penSizes={penSizes}
         setPenSizes={setPenSizes}
         setColours={setColours}
-        palmRejec={palmRejec}
-        setPalmRejec={setPalmRejec}
+        bgPattern={bgPattern}
+        setBgPattern={setBgPattern}
       />
       <button
         className="absolute transition-all! duration-150 ease-in-out top-4 left-4 min-h-15 p-4 text-stone-300 text-xl bg-stone-700 rounded-lg cursor-pointer z-30 border border-stone-500 hover:bg-stone-600"
@@ -108,9 +108,8 @@ function Note() {
       </button>
       <div className="absolute top-4 right-4 min-h-15 p-3 text-stone-300 text-xl rounded-lg bg-stone-700 border border-stone-500 flex z-30">
         <div
-          className={`text-3xl mr-2 ${
-            saved ? "text-transparent" : "text-stone-300"
-          }`}
+          className={`text-3xl mr-2 ${saved ? "text-transparent" : "text-stone-300"
+            }`}
         >
           •
         </div>

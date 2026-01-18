@@ -169,6 +169,7 @@ function InfiniteCanvas({
           thumbnailUrl,
           paths,
           textboxes,
+          bgPattern,
         },
         {
           headers: {
@@ -396,7 +397,7 @@ function InfiniteCanvas({
 
   const handlePointerUp = () => {
     const size = penSizes[colours.indexOf(colour)] * 2;
-    const pathId = crypto.randomUUID();
+    const pathId = uuid();
     setPaths((prev) => {
       const newPaths = [
         ...prev,
@@ -895,6 +896,7 @@ function InfiniteCanvas({
             if (selectedOption === "pen") {
               resetGestures(e);
               handlePointerDown(e);
+              console.log(bgPattern)
             } else if (selectedOption === "pan") {
               resetGestures(e);
               startPan(e);
@@ -935,19 +937,20 @@ function InfiniteCanvas({
                 cy="10.5"
                 r="1"
                 fill="rgba(255, 255, 255, 50%)"
+
               />
             </pattern>
             <pattern
               id="mediumGrid"
-              width="40"
-              height="40"
+              width="30"
+              height="30"
               patternUnits="userSpaceOnUse"
             >
               <path
-                d="M 40 0 L 0 0 0 40"
+                d="M 30 0 L 0 0 0 30"
                 fill="none"
                 stroke="rgba(255, 255, 255, 50%)"
-                stroke-width="1"
+                strokeWidth="1"
               />
             </pattern>
             <pattern
@@ -960,7 +963,7 @@ function InfiniteCanvas({
                 d="M 20 0 L 0 0 0 20"
                 fill="none"
                 stroke="rgba(255, 255, 255, 50%)"
-                stroke-width="1"
+                strokeWidth="1"
               />
             </pattern>
             <pattern
@@ -973,7 +976,7 @@ function InfiniteCanvas({
                 d="M 60 0 L 0 0 0 60"
                 fill="none"
                 stroke="rgba(255, 255, 255, 50%)"
-                stroke-width="1"
+                strokeWidth="1"
               />
             </pattern>
           </defs>

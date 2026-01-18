@@ -19,8 +19,8 @@ function Toolbar({
   penSizes,
   setPenSizes,
   setColours,
-  palmRejec,
-  setPalmRejec,
+  bgPattern,
+  setBgPattern
 }: {
   selected: string;
   setSelected: (v: string) => void;
@@ -30,57 +30,46 @@ function Toolbar({
   penSizes: number[];
   setPenSizes: React.Dispatch<React.SetStateAction<number[]>>;
   setColours: React.Dispatch<React.SetStateAction<string[]>>;
-  palmRejec: { x: number; y: number; width: number; height: number } | null;
-  setPalmRejec: React.Dispatch<
-    React.SetStateAction<{
-      x: number;
-      y: number;
-      width: number;
-      height: number;
-    } | null>
-  >;
+  bgPattern: string | null;
+  setBgPattern: (v: string | null) => void
 }) {
   const [newColour, setNewColour] = useState<string>("#ffffff");
 
   return (
     <div className=" absolute top-4 left-1/2 -translate-x-1/2 z-30 min-h-15 border border-stone-500 w-auto rounded-lg p-3 bg-stone-700 flex ">
       <div
-        className={`mx-2 ${
-          selected === "mouse"
-            ? "border-stone-300 bg-stone-300/20"
-            : "border-transparent"
-        } border w-fit p-2 rounded-md text-stone-300`}
+        className={`mx-2 ${selected === "mouse"
+          ? "border-stone-300 bg-stone-300/20"
+          : "border-transparent"
+          } border w-fit p-2 rounded-md text-stone-300`}
         onClick={() => setSelected("mouse")}
       >
         <FaMousePointer />
       </div>
       <div
-        className={`mx-2 ${
-          selected === "text"
-            ? "border-stone-300 bg-stone-300/20"
-            : "border-transparent"
-        } border w-fit p-2 rounded-md  text-stone-300`}
+        className={`mx-2 ${selected === "text"
+          ? "border-stone-300 bg-stone-300/20"
+          : "border-transparent"
+          } border w-fit p-2 rounded-md  text-stone-300`}
         onClick={() => setSelected("text")}
       >
         <FaICursor />
       </div>
       <div
-        className={`mx-2 ${
-          selected === "pan"
-            ? "border-stone-300 bg-stone-300/20"
-            : "border-transparent"
-        } border w-fit p-2 rounded-md  text-stone-300`}
+        className={`mx-2 ${selected === "pan"
+          ? "border-stone-300 bg-stone-300/20"
+          : "border-transparent"
+          } border w-fit p-2 rounded-md  text-stone-300`}
         onClick={() => setSelected("pan")}
       >
         <FaHandPaper />
       </div>
       <div className="border mx-3 border-stone-300 h-8"></div>
       <div
-        className={`mx-2 ${
-          selected === "eraser"
-            ? "border-stone-300 bg-stone-300/20"
-            : "border-transparent"
-        } border w-fit p-2 rounded-md  text-stone-300`}
+        className={`mx-2 ${selected === "eraser"
+          ? "border-stone-300 bg-stone-300/20"
+          : "border-transparent"
+          } border w-fit p-2 rounded-md  text-stone-300`}
         onClick={() => setSelected("eraser")}
       >
         <FaEraser />
@@ -101,18 +90,16 @@ function Toolbar({
         />
       ))}
       <div
-        className={`mx-2 relative inline-block ${
-          selected === "add"
-            ? "border-stone-300 bg-stone-300/20"
-            : "border-transparent"
-        } border w-fit p-2 rounded-full  text-stone-300`}
+        className={`mx-2 relative inline-block ${selected === "add"
+          ? "border-stone-300 bg-stone-300/20"
+          : "border-transparent"
+          } border w-fit p-2 rounded-full  text-stone-300`}
         onClick={() => setSelected("add")}
       >
         <FaPlus />
         <div
-          className={`${
-            selected === "add" ? "absolute" : "hidden"
-          } left-1/2 -translate-x-1/2 top-[150%] bg-stone-700 border border-stone-500 p-2 rounded-lg flex flex-col`}
+          className={`${selected === "add" ? "absolute" : "hidden"
+            } left-1/2 -translate-x-1/2 top-[150%] bg-stone-700 border border-stone-500 p-2 rounded-lg flex flex-col`}
         >
           <HexColorPicker color={newColour} onChange={setNewColour} />
           <button
@@ -131,35 +118,119 @@ function Toolbar({
       </div>
       <div className="border mx-3 border-stone-300 h-8"></div>
       <div
-        className={`mx-2 relative inline-block border p-2 text-stone-300 rounded-md ${
-          selected === "more"
-            ? "border-stone-300 bg-stone-300/20"
-            : "border-transparent"
-        }`}
+        className={`mx-2 relative inline-block border p-2 text-stone-300 rounded-md ${selected === "more"
+          ? "border-stone-300 bg-stone-300/20"
+          : "border-transparent"
+          }`}
         onClick={() => setSelected("more")}
       >
         <BsThreeDots />
         <div
-          className={`${
-            selected === "more" ? "absolute" : "hidden"
-          } bg-stone-700 border border-stone-500 rounded-lg p-3 top-12 w-60`}
+          className={`${selected === "more" ? "absolute" : "hidden"
+            } bg-stone-700 border border-stone-500 rounded-lg p-2 top-12 w-60`}
         >
-          <div
-            className={`border ${
-              palmRejec
-                ? "border-stone-300 bg-stone-300/20"
-                : "border-transparent"
-            } p-3 rounded-md`}
-            onClick={() => {
-              if (palmRejec) {
-                setPalmRejec(null);
-              } else {
-                setPalmRejec({ x: 200, y: 200, width: 200, height: 200 });
+          <div className="flex justify-evenly">
+            <div
+              className={`border border-stone-300 rounded-md ${bgPattern === "dots" ? "bg-stone-300/20" : ""}`}
+              onClick={() => {
+                if (bgPattern !== "dots") {
+                  setBgPattern("dots")
+                } else if (bgPattern === "dots") {
+                  setBgPattern(null)
+                }
               }
-            }}
-          >
-            Palm Rejection window
+              }
+            >
+              <svg style={{
+                width: "60px",
+                height: "60px",
+              }}>
+                <defs>
+                  <pattern
+                    id="toolbar-dots"
+                    width="20"
+                    height="20"
+                    patternUnits="userSpaceOnUse"
+                  >
+                    <circle
+                      cx="10.5"
+                      cy="10.5"
+                      r="1"
+                      fill="rgba(255, 255, 255, 50%)"
+                    />
+                  </pattern>
+                </defs>
+                <rect width="100%" height="100%" fill="url(#toolbar-dots)" />
+              </svg>
+            </div>
+            <div
+              className={`border border-stone-300 rounded-md ${bgPattern === "smallGrid" ? "bg-stone-300/20" : ""}`}
+              onClick={() => {
+                if (bgPattern !== "smallGrid") {
+                  setBgPattern("smallGrid")
+                } else if (bgPattern === "smallGrid") {
+                  setBgPattern(null)
+                }
+              }
+              }
+            >
+              <svg style={{
+                width: "60px",
+                height: "60px",
+              }}>
+                <defs>
+                  <pattern
+                    id="toolbar-smallGrid"
+                    height="20"
+                    width="20"
+                    patternUnits="userSpaceOnUse"
+                  >
+                    <path
+                      d="M 20 0 L 0 0 0 20"
+                      fill="none"
+                      stroke="rgba(255, 255, 255, 50%)"
+                      strokeWidth="1"
+                    />
+                  </pattern>
+                </defs>
+                <rect width="100%" height="100%" fill="url(#toolbar-smallGrid)" />
+              </svg>
+            </div>
+            <div
+              className={`border border-stone-300 rounded-md ${bgPattern === "mediumGrid" ? "bg-stone-300/20" : ""}`}
+              onClick={() => {
+                if (bgPattern !== "mediumGrid") {
+                  setBgPattern("mediumGrid")
+                } else if (bgPattern === "mediumGrid") {
+                  setBgPattern(null)
+                }
+              }
+              }
+            >
+              <svg style={{
+                width: "60px",
+                height: "60px",
+              }}>
+                <defs>
+                  <pattern
+                    id="toolbar-mediumGrid"
+                    width="30"
+                    height="30"
+                    patternUnits="userSpaceOnUse"
+                  >
+                    <path
+                      d="M 30 0 L 0 0 0 30"
+                      fill="none"
+                      stroke="rgba(255, 255, 255, 50%)"
+                      strokeWidth="1"
+                    />
+                  </pattern>
+                </defs>
+                <rect width="100%" height="100%" fill="url(#toolbar-mediumGrid)" />
+              </svg>
+            </div>
           </div>
+
         </div>
       </div>
     </div>
