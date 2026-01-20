@@ -1,4 +1,5 @@
 import { useState } from "react";
+import ContextMenu from "@/components/ContextMenu";
 import Toolbar from "../components/Toolbar";
 import InfiniteCanvas from "@/components/InfiniteCanvas";
 import PalmRejecWin from "@/components/PalmRejecWin";
@@ -25,14 +26,27 @@ type Path = {
   size: number;
 };
 
+type Pos = {
+  x: number;
+  y: number;
+};
+
 function Note() {
   const authToken = localStorage.getItem("token");
   const { id } = useParams<{ id: string }>();
   const isLoading = useRef<boolean>(true);
 
+
   const [paths, setPaths] = useState<Path[]>([]);
   const [textboxes, setTextboxes] = useState<Box[]>([]);
   const [bgPattern, setBgPattern] = useState<string | null>(null);
+
+  const [contextPos, setContextPos] = useState<Pos | null>(null);
+  const [contextType, setContextType] = useState<string>("textbox");
+  const contextRef = useRef<HTMLDivElement>(null);
+  const [contextTargetIndex, setContextTargetIndex] = useState<string | null>(
+    null
+  );
 
   const [palmRejec, setPalmRejec] = useState<{
     x: number;
@@ -55,6 +69,14 @@ function Note() {
 
   const [noteName, setNoteName] = useState<string | null>(null);
   const [saved, setSaved] = useState<boolean>(true);
+
+  const deleteTextbox = () => {
+    if (contextTargetIndex !== null) {
+      setTextboxes((prev) => prev.filter((b) => b.id !== contextTargetIndex));
+      setContextPos(null);
+      setContextTargetIndex(null);
+    }
+  };
 
   useEffect(() => {
     async function loadNote() {
@@ -122,6 +144,17 @@ function Note() {
           selectedOption={selectedOption}
         />
       )}
+      {contextPos && (
+        <ContextMenu
+          pos={contextPos}
+          setPos={setContextPos}
+          ref={contextRef}
+          type={contextType}
+          onDelete={deleteTextbox}
+          palmRejec={palmRejec}
+          setPalmRejec={setPalmRejec}
+        />
+      )}
       <InfiniteCanvas
         selectedOption={selectedOption}
         setSelectedOption={setSelectedOption}
@@ -137,8 +170,11 @@ function Note() {
         isLoading={isLoading}
         setSaved={setSaved}
         bgPattern={bgPattern}
-        palmRejec={palmRejec}
-        setPalmRejec={setPalmRejec}
+        setContextPos={setContextPos}
+        contextPos={contextPos}
+        setContextType={setContextType}
+        setContextTargetIndex={setContextTargetIndex}
+        contextRef={contextRef}
       />
     </>
   );

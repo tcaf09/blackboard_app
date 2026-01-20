@@ -6,7 +6,6 @@ import React, {
   useMemo,
 } from "react";
 import Textbox from "./Textbox";
-import ContextMenu from "./ContextMenu";
 import { getStroke } from "perfect-freehand";
 import { type JSONContent } from "@tiptap/react";
 import { v4 as uuid } from "uuid";
@@ -65,15 +64,11 @@ type Props = {
   isLoading: React.RefObject<boolean>;
   setSaved: React.Dispatch<React.SetStateAction<boolean>>;
   bgPattern: string | null;
-  palmRejec: { x: number; y: number; height: number; width: number } | null;
-  setPalmRejec: React.Dispatch<
-    React.SetStateAction<{
-      x: number;
-      y: number;
-      width: number;
-      height: number;
-    } | null>
-  >;
+  setContextPos: (v: Pos | null) => void;
+  contextPos: Pos | null
+  setContextType: (v: string) => void;
+  setContextTargetIndex: (v: string | null) => void;
+  contextRef: React.RefObject<HTMLDivElement | null>
 };
 
 function InfiniteCanvas({
@@ -91,8 +86,11 @@ function InfiniteCanvas({
   isLoading,
   setSaved,
   bgPattern,
-  palmRejec,
-  setPalmRejec,
+  setContextPos,
+  contextPos,
+  setContextType,
+  setContextTargetIndex,
+  contextRef
 }: Props) {
   const screenRef = useRef<HTMLDivElement>(null);
 
@@ -102,12 +100,6 @@ function InfiniteCanvas({
   const longPressStartPos = useRef<null | Pos>(null);
   const longPressFired = useRef<boolean>(false);
 
-  const contextRef = useRef<HTMLDivElement>(null);
-  const [contextPos, setContextPos] = useState<Pos | null>(null);
-  const [contextTargetIndex, setContextTargetIndex] = useState<string | null>(
-    null
-  );
-  const [contextType, setContextType] = useState<string>("textbox");
 
   const isPanning = useRef<boolean>(false);
   const panOffset = useRef<Pos>({ x: 0, y: 0 });
@@ -357,8 +349,8 @@ function InfiniteCanvas({
 
     longPressTimerRef.current = setTimeout(() => {
       setContextPos({
-        x: (e.clientX - pos.x) / scale,
-        y: (e.clientY - pos.y) / scale,
+        x: e.clientX,
+        y: e.clientY,
       });
       setContextType(type);
       if (targetIndex) {
@@ -446,8 +438,8 @@ function InfiniteCanvas({
     e.stopPropagation();
     e.preventDefault();
     setContextPos({
-      x: (e.clientX - pos.x) / scale,
-      y: (e.clientY - pos.y) / scale,
+      x: e.clientX,
+      y: e.clientY,
     });
     setContextTargetIndex(index);
   };
@@ -467,13 +459,7 @@ function InfiniteCanvas({
     }
   };
 
-  const deleteTextbox = () => {
-    if (contextTargetIndex !== null) {
-      setTextboxes((prev) => prev.filter((b) => b.id !== contextTargetIndex));
-      setContextPos(null);
-      setContextTargetIndex(null);
-    }
-  };
+
 
   const addTextbox = (e: React.MouseEvent) => {
     const posx = (e.clientX - 50) / scale;
@@ -679,15 +665,6 @@ function InfiniteCanvas({
         }, 0);
       }
     };
-    function handleClickOutside(e: MouseEvent) {
-      if (
-        contextRef.current &&
-        !contextRef.current.contains(e.target as Node)
-      ) {
-        setContextPos(null);
-        setContextTargetIndex(null);
-      }
-    }
 
     const handleKeydown = (e: KeyboardEvent) => {
       const isCtrl = e.ctrlKey || e.metaKey;
@@ -701,18 +678,33 @@ function InfiniteCanvas({
       }
     };
 
-    document.addEventListener("mousedown", handleClickOutside);
     window.addEventListener("keydown", handleKeydown);
     return () => {
-      document.removeEventListener("mousedown", handleClickOutside, {
-        capture: true,
-      });
       window.removeEventListener("keydown", handleKeydown);
       if (ws.current) {
         ws.current.close();
       }
     };
   }, []);
+
+  useEffect(() => {
+    if (!contextPos) return
+
+    function handleClickOutside(e: MouseEvent) {
+      if (
+        contextRef.current &&
+        !contextRef.current.contains(e.target as Node)
+      ) {
+        setContextPos(null);
+        setContextTargetIndex(null);
+      }
+    }
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside)
+    }
+  }, [contextPos])
 
   useEffect(() => {
     if (isLoading.current || saving.current || isRemoteChange.current) {
@@ -880,23 +872,12 @@ function InfiniteCanvas({
             clearLongPress={clearLongPress}
           />
         ))}
-        {contextPos && (
-          <ContextMenu
-            pos={contextPos}
-            setPos={setContextPos}
-            ref={contextRef}
-            type={contextType}
-            onDelete={deleteTextbox}
-            palmRejec={palmRejec}
-            setPalmRejec={setPalmRejec}
-          />
-        )}
         <svg
           onPointerDown={(e) => {
             if (selectedOption === "pen") {
               resetGestures(e);
+              if (e.width > 1 || e.height > 1) return;
               handlePointerDown(e);
-              console.log(bgPattern)
             } else if (selectedOption === "pan") {
               resetGestures(e);
               startPan(e);
