@@ -9,6 +9,7 @@ import { useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { useRef } from "react";
 import { type JSONContent } from "@tiptap/react";
+import AgentWindow from "@/components/AgentWindow";
 
 type Box = {
   id: string;
@@ -69,6 +70,7 @@ function Note() {
 
   const [noteName, setNoteName] = useState<string | null>(null);
   const [saved, setSaved] = useState<boolean>(true);
+  const [agentOpen, setAgentOpen] = useState<boolean>(false)
 
   const deleteTextbox = () => {
     if (contextTargetIndex !== null) {
@@ -137,6 +139,7 @@ function Note() {
         </div>
         <div className="mt-1">{noteName || "Loading..."}</div>
       </div>
+      <AgentWindow agentOpen={agentOpen} setAgentOpen={setAgentOpen} />
       {palmRejec && (
         <PalmRejecWin
           win={palmRejec}

@@ -372,6 +372,7 @@ function InfiniteCanvas({
 
   function handlePointerDown(e: React.PointerEvent) {
     if (e.buttons !== 1) return;
+    if (drawing.current === true) return
     (e.target as Element).setPointerCapture(e.pointerId);
     setPoints([
       [(e.clientX - pos.x) / scale, (e.clientY - pos.y) / scale, e.pressure],
