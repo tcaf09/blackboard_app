@@ -98,8 +98,8 @@ function Toolbar({
       >
         <FaPlus />
         <div
-          className={`${selected === "add" ? "absolute" : "hidden"
-            } left-1/2 -translate-x-1/2 top-[150%] bg-stone-700 border border-stone-500 p-2 rounded-lg flex flex-col`}
+          className={`${selected === "add" ? "p-4 h-70 w-59 border border-stone-500" : "p-0 w-0 h-0"
+            } absolute !transition-all left-1/2 -translate-x-1/2 top-[150%] bg-stone-700 rounded-lg flex flex-col overflow-hidden`}
         >
           <HexColorPicker color={newColour} onChange={setNewColour} />
           <button
@@ -126,8 +126,8 @@ function Toolbar({
       >
         <BsThreeDots />
         <div
-          className={`${selected === "more" ? "absolute" : "hidden"
-            } bg-stone-700 border border-stone-500 rounded-lg p-2 top-12 w-60`}
+          className={`${selected === "more" ? "w-60 h-20 p-2 border border-stone-500" : "w-0 h-0 p-0"
+            } absolute !transition-all bg-stone-700 rounded-lg top-12 overflow-hidden`}
         >
           <div className="flex justify-evenly">
             <div
