@@ -1,22 +1,29 @@
 import express from "express";
 import { GoogleGenAI } from "@google/genai";
+import jwt from "jsonwebtoken";
 
 const router = express.Router()
 const ai = new GoogleGenAI({})
 
-router.post("/respond", async (req, res) => {
+router.post("/respond", authenticateToken, async (req, res) => {
   try {
     const query = req.body.query
+
     if (!query) {
       return res.status(400).send({ message: "No query sent" })
     }
 
+    const formattedContext = req.body.context.map(pair => pair
+      .map(message => `${message.role === "user" ? "User" : "Assistant"} : ${message.message}`))
+      .join("\\n")
+
+    console.log(formattedContext)
+
     const response = await ai.models.generateContent({
       model: "gemini-2.5-flash-lite",
-      maxOutputTokens: 500,
-      contents: `You are an AI assistant.
+      contents: `You are an AI learning assistant.
 
-Respond to the user's query using markup formatting (Markdown-style).
+Respond to the user's query using markup formatting (Markdown-style) based on the given context.
 
 STRICT OUTPUT RULES:
 - Do NOT use actual line breaks.
@@ -30,6 +37,8 @@ STRICT OUTPUT RULES:
 - The opening and closing "---" must be included exactly.
 - There must be exactly two "\\n" after the opening "---" and before the closing "---".
 - Do not include anything before or after the wrapper.
+
+Context: ${formattedContext}
 
 User query: "${query}"
 

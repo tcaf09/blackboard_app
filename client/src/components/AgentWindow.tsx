@@ -10,17 +10,20 @@ import axios from "axios";
 
 interface Message {
   id: string;
+  role: string;
   message: string;
 }
 
 function AgentWindow({
   agentOpen,
   setAgentOpen,
-  token
+  token,
+  noteId
 }: {
   agentOpen: boolean;
   setAgentOpen: React.Dispatch<React.SetStateAction<boolean>>;
   token: string | null;
+  noteId: string | undefined;
 }) {
   const messageAreaRef = useRef<HTMLTextAreaElement>(null)
   const [userMessage, setUserMessage] = useState<string>("")
@@ -28,19 +31,22 @@ function AgentWindow({
   const [userMessages, setUserMessages] = useState<Message[]>([])
 
   function submitUserMessage() {
-    setUserMessages(prev => [...prev, { id: uuid(), message: userMessage }])
+    const userContext = userMessages.slice(-5)
+    const agentContext = agentMessages.slice(-5)
+    const totalContext = userContext.map((message, i) => [message, agentContext[i]])
+    setUserMessages(prev => [...prev, { id: uuid(), role: "user", message: userMessage }])
     axios.post(
       `${import.meta.env.VITE_API_URL}/api/ai/respond`,
-      { query: userMessage },
+      { query: userMessage, context: totalContext },
       {
         headers: {
           "Content-Type": "application/json",
-          "Authorization": "Bearer" + token
+          "Authorization": `Bearer ${token}`
         }
       }).then(res => {
         const response = res.data.message.candidates[0].content.parts[0].text
         if (response) {
-          setAgentMessages(prev => [...prev, { id: uuid(), message: response }])
+          setAgentMessages(prev => [...prev, { id: uuid(), role: "assistant", message: response }])
         }
       })
     setUserMessage("")
@@ -82,7 +88,7 @@ function AgentWindow({
             ref={messageAreaRef}
             placeholder="Ask Anything..."
             rows={1}
-            className="!transition-all overflow-hidden resize-none top-0 bottom-0 text-stone-300 w-full bg-stone-800 p-2 px-5 pr-13 rounded-3xl border border-transparent focus:border-stone-300 focus:outline-none max-h-30"
+            className="!transition-all block overflow-hidden resize-none top-0 bottom-0 text-stone-300 w-full bg-stone-800 p-2 px-5 pr-13 rounded-3xl border border-transparent focus:border-stone-300 outline-none max-h-30"
             value={userMessage}
             onChange={(e) => setUserMessage(e.target.value)}
             onInput={(e) => {
@@ -100,7 +106,7 @@ function AgentWindow({
             }
           />
           <button
-            className="absolute cursor-pointer bottom-1 h-9 right-0.5 bg-stone-300 text-lg px-4 rounded-full"
+            className="absolute cursor-pointer h-8 bottom-1 right-1 bg-stone-300 text-lg px-4 rounded-full"
             onClick={() => {
               if (!userMessage.trim()) return
               submitUserMessage()

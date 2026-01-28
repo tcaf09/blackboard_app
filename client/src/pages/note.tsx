@@ -139,7 +139,12 @@ function Note() {
         </div>
         <div className="mt-1">{noteName || "Loading..."}</div>
       </div>
-      <AgentWindow agentOpen={agentOpen} setAgentOpen={setAgentOpen} token={authToken} />
+      <AgentWindow
+        agentOpen={agentOpen}
+        setAgentOpen={setAgentOpen}
+        token={authToken}
+        noteId={id}
+      />
       {palmRejec && (
         <PalmRejecWin
           win={palmRejec}
