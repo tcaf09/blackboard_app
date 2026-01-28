@@ -143,7 +143,6 @@ function Note() {
         agentOpen={agentOpen}
         setAgentOpen={setAgentOpen}
         token={authToken}
-        noteId={id}
       />
       {palmRejec && (
         <PalmRejecWin

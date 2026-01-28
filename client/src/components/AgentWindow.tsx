@@ -18,12 +18,10 @@ function AgentWindow({
   agentOpen,
   setAgentOpen,
   token,
-  noteId
 }: {
   agentOpen: boolean;
   setAgentOpen: React.Dispatch<React.SetStateAction<boolean>>;
   token: string | null;
-  noteId: string | undefined;
 }) {
   const messageAreaRef = useRef<HTMLTextAreaElement>(null)
   const [userMessage, setUserMessage] = useState<string>("")
